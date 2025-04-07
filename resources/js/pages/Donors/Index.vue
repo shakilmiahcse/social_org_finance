@@ -1,45 +1,291 @@
 <script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue'; // Import AppLayout for layout
-import { type BreadcrumbItem } from '@/types';  // Import necessary types
-import { Head } from '@inertiajs/vue3'; // Set the page title dynamically
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Head, router } from '@inertiajs/vue3';
+import { type BreadcrumbItem } from '@/types';
+import EasyDataTable from 'vue3-easy-data-table';
+import 'vue3-easy-data-table/dist/style.css';
+import ExcelJS from 'exceljs';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { saveAs } from 'file-saver';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import Swal from 'sweetalert2';
+import AddDonorModal from './create.vue';
+import EditDonorModal from './edit.vue';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Donors',
-        href: '/donors',
+// Refs
+const searchTerm = ref('');
+const addDonorModal = ref();
+const editDonorModal = ref();
+const selectedDonor = ref(null);
+const $refs = ref<Record<string, HTMLElement>>({});
+
+// Props
+const props = defineProps({
+    donors: {
+        type: Array as () => Array<{
+            id: number;
+            name: string;
+            email: string;
+            phone: string;
+        }>,
+        required: true
     },
+});
+
+// Computed
+const filteredDonors = computed(() =>
+    props.donors.filter(d =>
+        d.name.toLowerCase().includes(searchTerm.value.toLowerCase())
+    )
+);
+
+// Constants
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Donors', href: '/donors' },
 ];
 
-defineProps({
-    donors: Array, // Accept donors data as prop
+const headers = [
+    { text: 'Name', value: 'name', sortable: true },
+    { text: 'Email', value: 'email', sortable: true },
+    { text: 'Phone', value: 'phone', sortable: true },
+    { text: 'Actions', value: 'actions', sortable: false, width: 120 },
+];
+
+// Methods
+const addDonor = () => addDonorModal.value.open();
+
+const editDonor = (id: number) => {
+    const donor = props.donors.find(d => d.id === id);
+    if (donor) {
+        selectedDonor.value = donor;
+        editDonorModal.value.open();
+    }
+};
+
+const deleteDonor = (id: number) => {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(`/donors/${id}`, {
+                onSuccess: () => {
+                    Swal.fire('Deleted!', 'The donor has been deleted.', 'success');
+                }
+            });
+        }
+    });
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+    props.donors.forEach(donor => {
+        const dropdown = $refs.value[`dropdown-${donor.id}`];
+        if (dropdown && !dropdown.contains(event.target as Node) &&
+            !(event.target as Element).closest(`[data-dropdown-button="${donor.id}"]`)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+};
+
+const toggleDropdown = (id: number) => {
+    const dropdown = $refs.value[`dropdown-${id}`];
+    if (dropdown) {
+        // Close all other dropdowns first
+        props.donors.forEach(d => {
+            if (d.id !== id && $refs.value[`dropdown-${d.id}`]) {
+                $refs.value[`dropdown-${d.id}`].classList.add('hidden');
+            }
+        });
+        dropdown.classList.toggle('hidden');
+    }
+};
+
+// Export functions
+const exportToExcel = () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Donors');
+    worksheet.columns = [
+        { header: 'Name', key: 'name' },
+        { header: 'Email', key: 'email' },
+        { header: 'Phone', key: 'phone' },
+    ];
+    worksheet.addRows(props.donors);
+    workbook.xlsx.writeBuffer().then((buffer) => {
+        saveAs(new Blob([buffer]), 'donors.xlsx');
+    });
+};
+
+const exportToPDF = () => {
+    const doc = new jsPDF();
+    autoTable(doc, {
+        head: [['Name', 'Email', 'Phone']],
+        body: props.donors.map(d => [d.name, d.email, d.phone]),
+    });
+    doc.save('donors.pdf');
+};
+
+// Lifecycle hooks
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
 <template>
-    <Head title="Donor List" /> <!-- Set the page title dynamically -->
+    <Head title="Donor List" />
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div class="p-4 space-y-4">
+            <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
+                <!-- Header with Add button -->
+                <div class="flex justify-between items-center">
+                    <h1 class="text-2xl font-bold">Donor List</h1>
+                    <button @click="addDonor"
+                        class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
+                        <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
+                        Add
+                    </button>
+                </div>
 
-    <AppLayout :breadcrumbs="breadcrumbs"> <!-- Wrap the content inside the layout -->
-        <div class="flex flex-col gap-4 p-4 rounded-xl">
-            <h1 class="text-2xl font-bold mb-4">Donor List</h1>
+                <!-- Top bar -->
+                <div class="flex justify-between items-center flex-wrap gap-2">
+                    <div class="flex gap-2">
+                        <button @click="exportToExcel"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
+                            Export Excel
+                        </button>
+                        <button @click="exportToPDF"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
+                            Export PDF
+                        </button>
+                    </div>
+                    <div>
+                        <input v-model="searchTerm" type="text" placeholder="Search donors..."
+                            class="border rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-300">
+                    </div>
+                </div>
 
-            <table class="w-full table-auto border">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="border px-4 py-2">ID</th>
-                        <th class="border px-4 py-2">Name</th>
-                        <th class="border px-4 py-2">Email</th>
-                        <th class="border px-4 py-2">Phone</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="donor in donors" :key="donor.id">
-                        <td class="border px-4 py-2">{{ donor.id }}</td>
-                        <td class="border px-4 py-2">{{ donor.name }}</td>
-                        <td class="border px-4 py-2">{{ donor.email }}</td>
-                        <td class="border px-4 py-2">{{ donor.phone }}</td>
-                    </tr>
-                </tbody>
-            </table>
+                <!-- Donor table -->
+                <EasyDataTable :headers="headers" :items="filteredDonors" table-class="customize-table"
+                    header-text-direction="left" rows-per-page="10" :rows-items="[20, 50]" buttons-pagination>
+                    <template #item-actions="{ id }">
+                        <div class="relative inline-block text-left">
+                            <button :data-dropdown-button="id" class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
+                                @click.stop="toggleDropdown(id)">
+                                Actions
+                            </button>
+                            <div :ref="el => $refs[`dropdown-${id}`] = el"
+                                class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
+                                <div class="py-1">
+                                    <button @click.stop="editDonor(id)"
+                                        class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <font-awesome-icon :icon="['fas', 'pen-to-square']" />
+                                        Edit
+                                    </button>
+                                    <button @click.stop="deleteDonor(id)"
+                                        class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                        <font-awesome-icon :icon="['fas', 'trash']" />
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </EasyDataTable>
+            </div>
         </div>
+
+        <AddDonorModal ref="addDonorModal" />
+        <EditDonorModal ref="editDonorModal" :donor="selectedDonor" />
     </AppLayout>
 </template>
+
+<style>
+/* Updated table styling */
+.customize-table {
+    --easy-table-border: none;
+    /* Remove all borders */
+    --easy-table-row-border: none;
+    /* Remove row borders */
+
+    /* Header styling */
+    --easy-table-header-font-size: 0.875rem;
+    --easy-table-header-background-color: #f9fafb;
+    --easy-table-header-font-color: #374151;
+    --easy-table-header-height: 40px;
+
+    /* Body styling */
+    --easy-table-body-row-hover-background-color: #f3f4f6;
+    --easy-table-body-row-height: 40px;
+}
+
+/* Horizontal borders only */
+.customize-table .easy-table-header {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.customize-table .easy-table-body .easy-table-row {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Remove last row border */
+.customize-table .easy-table-body .easy-table-row:last-child {
+    border-bottom: none;
+}
+
+/* Zebra striping - now properly applied */
+.customize-table .easy-table-body .easy-table-row:nth-of-type(odd) {
+    background-color: white;
+}
+
+.customize-table .easy-table-body .easy-table-row:nth-of-type(even) {
+    background-color: #f9fafb;
+}
+
+/* Completely remove vertical borders */
+.customize-table table {
+    border-collapse: collapse;
+    border-style: hidden;
+}
+
+.customize-table th,
+.customize-table td {
+    border-left: none !important;
+    border-right: none !important;
+}
+
+/* Hover effect */
+.customize-table .easy-table-body .easy-table-row:hover {
+    background-color: #f3f4f6;
+}
+
+/* Dropdown animation */
+.dropdown-enter-active,
+.dropdown-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* Ensure table takes full width */
+.customize-table {
+    width: 100% !important;
+}
+
+/* Fix cell padding */
+.customize-table th,
+.customize-table td {
+    padding: 8px 12px;
+}</style>

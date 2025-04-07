@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Donor;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule;
 
 class DonorController extends Controller
 {
@@ -33,7 +34,15 @@ class DonorController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255|unique:donors,email',
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        Donor::create($validated);
+
+        return redirect()->back()->with('success', 'Donor created successfully');
     }
 
     /**
@@ -57,7 +66,20 @@ class DonorController extends Controller
      */
     public function update(Request $request, Donor $donor)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('donors')->ignore($donor->id),
+            ],
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        $donor->update($validated);
+
+        return redirect()->back()->with('success', 'Donor updated successfully');
     }
 
     /**
@@ -65,6 +87,8 @@ class DonorController extends Controller
      */
     public function destroy(Donor $donor)
     {
-        //
+        $donor->delete();
+        return redirect()->route('donors.index')->with('success', 'Donor deleted successfully.');
     }
+
 }
