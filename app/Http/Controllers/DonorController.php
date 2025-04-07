@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Donor;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class DonorController extends Controller
 {
@@ -12,7 +13,11 @@ class DonorController extends Controller
      */
     public function index()
     {
-        //
+        $donors = Donor::all(); // Or use pagination if needed
+
+        return Inertia::render('Donors/Index', [
+            'donors' => $donors
+        ]);
     }
 
     /**
