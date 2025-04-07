@@ -169,13 +169,13 @@ onUnmounted(() => {
                     </div>
                     <div>
                         <input v-model="searchTerm" type="text" placeholder="Search donors..."
-                            class="border rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-300">
+                            class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                     </div>
                 </div>
 
                 <!-- Donor table -->
-                <EasyDataTable :headers="headers" :items="filteredDonors" table-class="customize-table"
-                    header-text-direction="left" rows-per-page="10" :rows-items="[20, 50]" buttons-pagination>
+                <EasyDataTable :headers="headers" :items="filteredDonors"
+                    header-text-direction="left" rows-per-page="10" :rows-items="[20, 50]" buttons-pagination class="custom-table">
                     <template #item-actions="{ id }">
                         <div class="relative inline-block text-left">
                             <button :data-dropdown-button="id" class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
@@ -209,83 +209,14 @@ onUnmounted(() => {
 </template>
 
 <style>
-/* Updated table styling */
-.customize-table {
-    --easy-table-border: none;
-    /* Remove all borders */
-    --easy-table-row-border: none;
-    /* Remove row borders */
+/* If you want to style other parts of the table */
+.custom-table {
+    --easy-table-footer-background-color: #dfe0e1;
+    --easy-table-footer-font-size: 14px;
 
-    /* Header styling */
-    --easy-table-header-font-size: 0.875rem;
-    --easy-table-header-background-color: #f9fafb;
-    --easy-table-header-font-color: #374151;
-    --easy-table-header-height: 40px;
-
-    /* Body styling */
-    --easy-table-body-row-hover-background-color: #f3f4f6;
-    --easy-table-body-row-height: 40px;
+    /* Header styling (optional) */
+    --easy-table-header-background-color: #f1f3f5;
+    --easy-table-header-font-size: 14px;
+    --easy-table-header-font-color: #495057;
 }
-
-/* Horizontal borders only */
-.customize-table .easy-table-header {
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.customize-table .easy-table-body .easy-table-row {
-    border-bottom: 1px solid #e5e7eb;
-}
-
-/* Remove last row border */
-.customize-table .easy-table-body .easy-table-row:last-child {
-    border-bottom: none;
-}
-
-/* Zebra striping - now properly applied */
-.customize-table .easy-table-body .easy-table-row:nth-of-type(odd) {
-    background-color: white;
-}
-
-.customize-table .easy-table-body .easy-table-row:nth-of-type(even) {
-    background-color: #f9fafb;
-}
-
-/* Completely remove vertical borders */
-.customize-table table {
-    border-collapse: collapse;
-    border-style: hidden;
-}
-
-.customize-table th,
-.customize-table td {
-    border-left: none !important;
-    border-right: none !important;
-}
-
-/* Hover effect */
-.customize-table .easy-table-body .easy-table-row:hover {
-    background-color: #f3f4f6;
-}
-
-/* Dropdown animation */
-.dropdown-enter-active,
-.dropdown-leave-active {
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.dropdown-enter-from,
-.dropdown-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
-}
-
-/* Ensure table takes full width */
-.customize-table {
-    width: 100% !important;
-}
-
-/* Fix cell padding */
-.customize-table th,
-.customize-table td {
-    padding: 8px 12px;
-}</style>
+</style>
