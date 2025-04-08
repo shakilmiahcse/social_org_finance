@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Receipt</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+        }
+        .receipt-container {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        .watermark {
+            position: absolute;
+            opacity: 0.03;
+            font-size: 12rem;
+            font-weight: 700;
+            transform: rotate(-30deg);
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-md">
+        <!-- Receipt Container -->
+        <div id="receipt" class="receipt-container bg-white relative overflow-hidden">
+            <!-- Watermark -->
+            <div class="watermark text-indigo-500 -left-20 -top-20">HOPE</div>
+            
+            <!-- Header -->
+            <div class="gradient-bg text-white p-6 relative">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-heart text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h1 class="text-2xl font-bold">Donation Receipt</h1>
+                            <p class="text-indigo-100">Thank you for your generosity!</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-indigo-100 text-sm">Transaction #</p>
+                        <p class="font-mono font-semibold">TXN123456789</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receipt Content -->
+            <div class="p-6 relative">
+                <!-- Organization Info -->
+                <div class="mb-8 text-center">
+                    <div class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-indigo-100 overflow-hidden">
+                        <img src="products/product-img-1.jpg" alt="Hope Foundation" class="w-full h-full object-cover">
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Hope Foundation</h2>
+                    <p class="text-gray-500">Building a better tomorrow</p>
+                </div>
+
+                <!-- Donation Details -->
+                <div class="bg-gray-50 rounded-lg p-5 mb-6">
+                    <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
+                        <div>
+                            <p class="text-gray-500 text-sm">Donation Amount</p>
+                            <p class="text-3xl font-bold text-gray-800">$50.00</p>
+                        </div>
+                        <div class="text-green-500 bg-green-50 px-3 py-2 rounded-lg">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            <span class="font-semibold">Completed</span>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Date</span>
+                            <span class="font-semibold">April 07, 2025</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Payment Method</span>
+                            <span class="font-semibold">Credit Card</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Donor Name</span>
+                            <span class="font-semibold">John Doe</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="text-center">
+                    <p class="text-gray-400 text-sm mb-1">Thank you for supporting our mission!</p>
+                    <p class="text-gray-400 text-xs">This receipt serves as an official record of your donation.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-center space-x-4 mt-6">
+            <button id="shareButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center transition-colors">
+                <i class="fas fa-share-alt mr-2"></i>
+                Share Receipt
+            </button>
+            <button id="printButton" class="bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border border-gray-300 flex items-center transition-colors">
+                <i class="fas fa-print mr-2"></i>
+                Print
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('shareButton').addEventListener('click', async () => {
+            try {
+                // Get the receipt element
+                const element = document.getElementById('receipt');
+                
+                // Convert HTML to canvas
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#f8fafc'
+                });
+
+                // Convert canvas to blob
+                const blob = await new Promise(resolve => {
+                    canvas.toBlob(resolve, 'image/png');
+                });
+
+                // Create file for sharing
+                const file = new File([blob], 'donation-receipt.png', {
+                    type: 'image/png',
+                    lastModified: Date.now()
+                });
+
+                // Share data
+                const shareData = {
+                    files: [file],
+                    title: 'Donation Receipt',
+                    text: 'I just donated $50.00 to Hope Foundation! Transaction ID: TXN123456789'
+                };
+
+                // Check if sharing files is supported
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share(shareData);
+                    console.log('Image shared successfully');
+                } else {
+                    // Fallback: Download the image
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'donation-receipt.png';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    alert('Image sharing not supported. The receipt has been downloaded instead.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error generating or sharing the receipt image');
+            }
+        });
+
+        // Print functionality
+        document.getElementById('printButton').addEventListener('click', async () => {
+            const element = document.getElementById('receipt');
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#f8fafc'
+            });
+            
+            const dataUrl = canvas.toDataURL('image/png');
+            const windowContent = '<!DOCTYPE html><html><head><title>Print Receipt</title></head><body style="margin:0;padding:0;"><img src="' + dataUrl + '" style="width:100%;height:auto;"/></body></html>';
+            
+            const printWin = window.open('', '', 'width=800,height=600');
+            printWin.document.open();
+            printWin.document.write(windowContent);
+            printWin.document.close();
+            
+            printWin.onload = function() {
+                printWin.focus();
+                printWin.print();
+            };
+        });
+    </script>
+</body>
+</html>
