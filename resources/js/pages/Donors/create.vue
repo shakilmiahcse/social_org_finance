@@ -2,12 +2,15 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
+import { useToast } from 'vue-toastification'
 
+const toast = useToast();
 const isOpen = ref(false);
 const form = ref({
     name: '',
     email: '',
     phone: '',
+    address: '',
 });
 
 const emit = defineEmits(['close']);
@@ -15,12 +18,7 @@ const emit = defineEmits(['close']);
 const submit = () => {
     router.post('/donors', form.value, {
         onSuccess: () => {
-            Swal.fire({
-                title: 'Success!',
-                text: 'Donor added successfully',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
+            toast.success('Donor added successfully')
             closeModal();
         },
         onError: (errors) => {
@@ -36,7 +34,7 @@ const submit = () => {
 
 const closeModal = () => {
     isOpen.value = false;
-    form.value = { name: '', email: '', phone: '' };
+    form.value = { name: '', email: '', phone: '', address: '' };
     emit('close');
 };
 
@@ -64,19 +62,27 @@ defineExpose({
                     </h3>
                     <form @submit.prevent="submit">
                         <div class="mb-4">
-                            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <label for="name" class="block text-sm font-medium text-gray-700">
+                                Name <span class="text-red-500">*</span>
+                            </label>
                             <input v-model="form.name" type="text" id="name" required
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter donor's Name">
                         </div>
                         <div class="mb-4">
                             <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                             <input v-model="form.email" type="email" id="email"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter donor's Email">
                         </div>
                         <div class="mb-4">
                             <label for="phone" class="block text-sm font-medium text-gray-700">Phone</label>
                             <input v-model="form.phone" type="tel" id="phone"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter donor's Phone">
+                        </div>
+                        <div class="mb-4">
+                            <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                            <textarea v-model="form.address" id="address" rows="3"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="Enter donor's address"></textarea>
                         </div>
                     </form>
                 </div>

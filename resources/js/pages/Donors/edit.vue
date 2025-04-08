@@ -2,7 +2,9 @@
 import { ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
+import { useToast } from 'vue-toastification'
 
+const toast = useToast();
 const props = defineProps({
     donor: {
         type: Object,
@@ -16,6 +18,7 @@ const form = ref({
     name: '',
     email: '',
     phone: '',
+    address: '',
 });
 
 const emit = defineEmits(['close']);
@@ -27,6 +30,7 @@ watch(() => props.donor, (newDonor) => {
             name: newDonor.name,
             email: newDonor.email,
             phone: newDonor.phone,
+            address: newDonor.address,
         };
     }
 });
@@ -35,12 +39,7 @@ const submit = () => {
     router.put(`/donors/${form.value.id}`, form.value, {
         preserveScroll: true,
         onSuccess: () => {
-            Swal.fire({
-                title: 'Success!',
-                text: 'Donor updated successfully',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
+            toast.success('Donor updated successfully')
             closeModal();
         },
         onError: (errors) => {
@@ -79,7 +78,9 @@ defineExpose({
                     <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Edit Donor</h3>
                     <form @submit.prevent="submit">
                         <div class="mb-4">
-                            <label for="edit-name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <label for="name" class="block text-sm font-medium text-gray-700">
+                                Name <span class="text-red-500">*</span>
+                            </label>
                             <input v-model="form.name" type="text" id="edit-name" required
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
@@ -93,6 +94,13 @@ defineExpose({
                             <input v-model="form.phone" type="tel" id="edit-phone"
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
+                        <div class="mb-4">
+                            <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                            <textarea v-model="form.address" id="address" rows="3"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="Enter donor's address"></textarea>
+                        </div>
+
                     </form>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">

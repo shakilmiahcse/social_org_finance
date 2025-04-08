@@ -6,15 +6,29 @@ use App\Models\Donor;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class DonorController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+
     public function index()
     {
-        $donors = Donor::all(); // Or use pagination if needed
+        $donors = Donor::with(['createdBy', 'updatedBy'])->orderBy('created_at', 'desc')->get()->map(function ($donor) {
+            return [
+                'id'          => $donor->id,
+                'name'        => $donor->name,
+                'email'       => $donor->email,
+                'phone'       => $donor->phone,
+                'address'     => $donor->address,
+                'createdBy'   => $donor->createdBy ? ['name' => $donor->createdBy->name] : null,
+                'updatedBy'   => $donor->updatedBy ? ['name' => $donor->updatedBy->name] : null,
+                'created_at'  => Carbon::parse($donor->created_at)->format('j F, Y g:i A'),
+                'updated_at'  => Carbon::parse($donor->updated_at)->format('j F, Y g:i A'),
+            ];
+        });
 
         return Inertia::render('Donors/Index', [
             'donors' => $donors
@@ -38,8 +52,10 @@ class DonorController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255|unique:donors,email',
             'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:255',
         ]);
 
+        $validated['created_by'] = auth()->id();
         Donor::create($validated);
 
         return redirect()->back()->with('success', 'Donor created successfully');
@@ -72,11 +88,12 @@ class DonorController extends Controller
                 'nullable',
                 'email',
                 'max:255',
-                Rule::unique('donors')->ignore($donor->id),
             ],
             'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255'
         ]);
 
+        $validated['updated_by'] = auth()->id();
         $donor->update($validated);
 
         return redirect()->back()->with('success', 'Donor updated successfully');

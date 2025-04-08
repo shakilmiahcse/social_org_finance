@@ -12,10 +12,14 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Swal from 'sweetalert2';
 import AddDonorModal from './create.vue';
 import EditDonorModal from './edit.vue';
+import { useToast } from 'vue-toastification';
+import ViewDonorModal from './view.vue';
 
 // Refs
+const toast = useToast();
 const searchTerm = ref('');
 const addDonorModal = ref();
+const viewDonorModal = ref();
 const editDonorModal = ref();
 const selectedDonor = ref(null);
 const $refs = ref<Record<string, HTMLElement>>({});
@@ -28,6 +32,8 @@ const props = defineProps({
             name: string;
             email: string;
             phone: string;
+            createdBy?: { name: string };
+            created_at: string;
         }>,
         required: true
     },
@@ -46,14 +52,25 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const headers = [
-    { text: 'Name', value: 'name', sortable: true },
+    { text: 'Name', value: 'name', sortable: true, class: 'font-bold' },
     { text: 'Email', value: 'email', sortable: true },
     { text: 'Phone', value: 'phone', sortable: true },
+    { text: 'Created By', value: 'createdBy.name', sortable: true },
+    { text: 'Created At', value: 'created_at', sortable: true },
     { text: 'Actions', value: 'actions', sortable: false, width: 120 },
 ];
 
 // Methods
 const addDonor = () => addDonorModal.value.open();
+
+// Add view method
+const viewDonor = (id: number) => {
+    const donor = props.donors.find(d => d.id === id);
+    if (donor) {
+        selectedDonor.value = donor;
+        viewDonorModal.value.open(); // call exposed open() method on the view modal
+    }
+};
 
 const editDonor = (id: number) => {
     const donor = props.donors.find(d => d.id === id);
@@ -76,7 +93,7 @@ const deleteDonor = (id: number) => {
         if (result.isConfirmed) {
             router.delete(`/donors/${id}`, {
                 onSuccess: () => {
-                    Swal.fire('Deleted!', 'The donor has been deleted.', 'success');
+                    toast.success('The donor has been deleted.')
                 }
             });
         }
@@ -175,16 +192,22 @@ onUnmounted(() => {
 
                 <!-- Donor table -->
                 <EasyDataTable :headers="headers" :items="filteredDonors"
-                    header-text-direction="left" rows-per-page="10" :rows-items="[20, 50]" buttons-pagination class="custom-table">
+                    header-text-direction="left" rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table">
                     <template #item-actions="{ id }">
                         <div class="relative inline-block text-left">
                             <button :data-dropdown-button="id" class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
                                 @click.stop="toggleDropdown(id)">
-                                Actions
+                                Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                             </button>
                             <div :ref="el => $refs[`dropdown-${id}`] = el"
                                 class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
                                 <div class="py-1">
+                                    <!-- View Button -->
+                                    <button @click.stop="viewDonor(id)"
+                                    class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <font-awesome-icon :icon="['fas', 'eye']" />
+                                    View
+                                    </button>
                                     <button @click.stop="editDonor(id)"
                                         class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <font-awesome-icon :icon="['fas', 'pen-to-square']" />
@@ -204,6 +227,7 @@ onUnmounted(() => {
         </div>
 
         <AddDonorModal ref="addDonorModal" />
+        <ViewDonorModal ref="viewDonorModal" :donor="selectedDonor" />
         <EditDonorModal ref="editDonorModal" :donor="selectedDonor" />
     </AppLayout>
 </template>
@@ -218,5 +242,10 @@ onUnmounted(() => {
     --easy-table-header-background-color: #f1f3f5;
     --easy-table-header-font-size: 14px;
     --easy-table-header-font-color: #495057;
+}
+
+/* Make the Name column bold */
+.custom-table .font-bold {
+    font-weight: bold !important;
 }
 </style>
