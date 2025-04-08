@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DonorController;
+use App\Http\Controllers\FundController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -14,6 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::resource('donors', DonorController::class);
+    Route::resource('funds', FundController::class);
 });
 
 require __DIR__.'/settings.php';
