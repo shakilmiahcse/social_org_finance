@@ -17,8 +17,17 @@ defineProps<{
 const page = usePage<SharedData>();
 const expanded = ref<string | null>(null); // currently expanded menu
 
+// Method to toggle expanded state for the menu
 function toggleMenu(title: string) {
     expanded.value = expanded.value === title ? null : title;
+}
+
+// Method to check if the parent menu should be active (when any child is active)
+function isParentActive(item: NavItem): boolean {
+    if (item.children) {
+        return item.children.some(child => child.href === page.url);
+    }
+    return false;
 }
 </script>
 
@@ -31,7 +40,7 @@ function toggleMenu(title: string) {
                 <div v-if="item.children">
                     <SidebarMenuButton as-child :tooltip="item.title" @click="toggleMenu(item.title)">
                         <div class="flex items-center gap-2 w-full px-2 py-2 rounded-md cursor-pointer hover:bg-muted transition"
-                            :class="{ 'bg-muted text-primary': expanded === item.title }">
+                            :class="{ 'bg-muted text-primary': expanded === item.title || isParentActive(item) }">
                             <component :is="item.icon" class="w-4 h-4" />
                             <span class="flex-1 text-sm">{{ item.title }}</span>
                             <span class="text-xs">
@@ -42,7 +51,8 @@ function toggleMenu(title: string) {
                     </SidebarMenuButton>
 
                     <!-- Child Items -->
-                    <div v-show="expanded === item.title" class="ml-6 mt-1 space-y-1 transition-all duration-300">
+                    <div v-show="expanded === item.title || isParentActive(item)"
+                        class="ml-6 mt-1 space-y-1 transition-all duration-300">
                         <Link v-for="child in item.children" :key="child.href" :href="child.href"
                             class="flex items-center gap-2 text-sm px-2 py-1 rounded hover:bg-gray-100 transition"
                             :class="{ 'font-semibold text-blue-600': page.url === child.href }">
@@ -52,7 +62,6 @@ function toggleMenu(title: string) {
                     </div>
 
                 </div>
-
 
                 <!-- No Children -->
                 <SidebarMenuButton v-else as-child :is-active="item.href === page.url" :tooltip="item.title"

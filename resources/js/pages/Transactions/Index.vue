@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, Link } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import EasyDataTable from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
@@ -10,14 +10,12 @@ import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Swal from 'sweetalert2';
-import AddTransactionModal from './create.vue';
 import EditTransactionModal from './edit.vue';
 import { useToast } from 'vue-toastification';
 import ViewTransactionModal from './view.vue';
 
 const toast = useToast();
 const searchTerm = ref('');
-const addTransactionModal = ref();
 const viewTransactionModal = ref();
 const editTransactionModal = ref();
 const selectedTransaction = ref(null);
@@ -68,8 +66,6 @@ const headers = [
     { text: 'Created At', value: 'created_at', sortable: true },
     { text: 'Actions', value: 'actions', sortable: false, width: 120 },
 ];
-
-const addTransaction = () => addTransactionModal.value.open();
 
 const viewTransaction = (id: number) => {
     const transaction = props.transactions.find(t => t.id === id);
@@ -179,11 +175,11 @@ onUnmounted(() => {
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                 <div class="flex justify-between items-center">
                     <h1 class="text-2xl font-bold">Transaction List</h1>
-                    <button @click="addTransaction"
+                    <Link href="/transactions/create"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
                         <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
                         Add
-                    </button>
+                    </Link>
                 </div>
 
                 <div class="flex justify-between items-center flex-wrap gap-2">
@@ -237,7 +233,6 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <AddTransactionModal ref="addTransactionModal" />
         <ViewTransactionModal ref="viewTransactionModal" :transaction="selectedTransaction" />
         <EditTransactionModal ref="editTransactionModal" :transaction="selectedTransaction" />
     </AppLayout>
