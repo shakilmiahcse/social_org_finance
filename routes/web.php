@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DonorController;
 use App\Http\Controllers\FundController;
+use App\Http\Controllers\TransactionController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -16,6 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('donors', DonorController::class);
     Route::resource('funds', FundController::class);
+    Route::resource('transactions', TransactionController::class);
 });
 
 require __DIR__.'/settings.php';
