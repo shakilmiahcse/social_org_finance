@@ -10,6 +10,7 @@ import { initializeTheme } from './composables/useAppearance';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { fas } from '@fortawesome/free-solid-svg-icons';
+import 'vue3-select/dist/vue3-select.css';
 
 // Toastification import for Vue 3
 import Toast from 'vue-toastification';

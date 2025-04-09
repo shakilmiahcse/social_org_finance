@@ -19,4 +19,11 @@ class Donor extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+
+    public static function getDropdown()
+    {
+        return self::pluck('name', 'id')->map(function ($name, $id) {
+            return ['id' => $id, 'name' => $name];
+        });
+    }
 }
