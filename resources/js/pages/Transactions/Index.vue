@@ -177,8 +177,8 @@ onUnmounted(() => {
                     <h1 class="text-2xl font-bold">Transaction List</h1>
                     <Link href="/transactions/create"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
-                        <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                        Add
+                    <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
+                    Add
                     </Link>
                 </div>
 
@@ -198,43 +198,47 @@ onUnmounted(() => {
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                     </div>
                 </div>
-
-                <EasyDataTable :headers="headers" :items="filteredTransactions" header-text-direction="left"
-                    rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table">
-                    <template #item-actions="{ id }">
-                        <div class="relative inline-block text-left">
-                            <button :data-dropdown-button="id" class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
-                                @click.stop="toggleDropdown(id)">
-                                Action <font-awesome-icon :icon="['fas', 'angle-down']" />
-                            </button>
-                            <div :ref="el => $refs[`dropdown-${id}`] = el"
-                                class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
-                                <div class="py-1">
-                                    <button @click.stop="viewTransaction(id)"
-                                        class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <font-awesome-icon :icon="['fas', 'eye']" />
-                                        View
-                                    </button>
-                                    <button @click.stop="editTransaction(id)"
-                                        class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <font-awesome-icon :icon="['fas', 'pen-to-square']" />
-                                        Edit
-                                    </button>
-                                    <button @click.stop="deleteTransaction(id)"
-                                        class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                        <font-awesome-icon :icon="['fas', 'trash']" />
-                                        Delete
-                                    </button>
+                <div class="overflow-auto">
+                    <EasyDataTable :headers="headers" :items="filteredTransactions" header-text-direction="left"
+                        rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination
+                        class="custom-table min-w-[700px]">
+                        <template #item-actions="{ id }">
+                            <div class="relative inline-block text-left">
+                                <button :data-dropdown-button="id"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
+                                    @click.stop="toggleDropdown(id)">
+                                    Action <font-awesome-icon :icon="['fas', 'angle-down']" />
+                                </button>
+                                <div :ref="el => $refs[`dropdown-${id}`] = el"
+                                    class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
+                                    <div class="py-1">
+                                        <button @click.stop="viewTransaction(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'eye']" />
+                                            View
+                                        </button>
+                                        <button @click.stop="editTransaction(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'pen-to-square']" />
+                                            Edit
+                                        </button>
+                                        <button @click.stop="deleteTransaction(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'trash']" />
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </template>
-                </EasyDataTable>
+                        </template>
+                    </EasyDataTable>
+                </div>
             </div>
         </div>
 
         <ViewTransactionModal ref="viewTransactionModal" :transaction="selectedTransaction" />
-        <EditTransactionModal ref="editTransactionModal" :transaction="selectedTransaction" />
+        <EditTransactionModal ref="editTransactionModal" :transaction="selectedTransaction" :donors="donors"
+            :funds="funds" />
     </AppLayout>
 </template>
 

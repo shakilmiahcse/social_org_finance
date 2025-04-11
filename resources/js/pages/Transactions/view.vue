@@ -42,17 +42,16 @@ defineExpose({
 
                 <!-- Header -->
                 <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4">
-                    <h3 class="text-xl font-semibold leading-6 text-white">Transaction Details</h3>
+                    <h3 class="text-xl font-semibold leading-6 text-white">Transaction Details <small>({{ transaction.txn_id }})</small></h3>
                 </div>
 
                 <!-- Main content -->
                 <div class="px-6 py-5 space-y-4">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Reference Number</p>
-                        <p class="mt-1 text-sm text-gray-900">{{ transaction.reference_no }}</p>
-                    </div>
-
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Reference</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ transaction.reference }}</p>
+                        </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Type</p>
                             <p class="mt-1 text-sm text-gray-900">{{ transaction.type }}</p>
@@ -62,12 +61,8 @@ defineExpose({
                             <p class="mt-1 text-sm text-gray-900">{{ transaction.status }}</p>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-500">Total Amount</p>
-                            <p class="mt-1 text-sm text-gray-900">{{ transaction.final_total }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Payment Status</p>
-                            <p class="mt-1 text-sm text-gray-900">{{ transaction.payment_status }}</p>
+                            <p class="text-sm font-medium text-gray-500">Amount</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ transaction.amount }}</p>
                         </div>
                     </div>
 
@@ -77,15 +72,13 @@ defineExpose({
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div v-if="transaction.created_by">
+                        <div v-if="transaction.createdBy">
                             <p class="text-sm font-medium text-gray-500">Created By</p>
-                            <p class="mt-1 text-sm text-gray-900">{{ transaction.created_by.first_name }} {{
-                                transaction.created_by.last_name }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ transaction.createdBy.name }}</p>
                         </div>
-                        <div v-if="transaction.updated_by">
+                        <div v-if="transaction.updatedBy">
                             <p class="text-sm font-medium text-gray-500">Updated By</p>
-                            <p class="mt-1 text-sm text-gray-900">{{ transaction.updated_by.first_name }} {{
-                                transaction.updated_by.last_name }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ transaction.updatedBy.name }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Created At</p>

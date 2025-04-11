@@ -67,12 +67,12 @@ defineExpose({
                     <!-- Details grid -->
                     <div class="grid grid-cols-1 gap-4">
                         <div>
-                            <p class="text-sm font-medium text-gray-500">Description</p>
-                            <p class="mt-1 text-sm text-gray-900">{{ fund.description || 'No description provided' }}</p>
-                        </div>
-                        <div>
                             <p class="text-sm font-medium text-gray-500">Total Amount</p>
                             <p class="mt-1 text-sm text-gray-900">{{ fund.total_amount }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Description</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ fund.description || 'No description provided' }}</p>
                         </div>
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div v-if="fund.createdBy">

@@ -191,38 +191,42 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Donor table -->
-                <EasyDataTable :headers="headers" :items="filteredDonors"
-                    header-text-direction="left" rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table">
-                    <template #item-actions="{ id }">
-                        <div class="relative inline-block text-left">
-                            <button :data-dropdown-button="id" class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
-                                @click.stop="toggleDropdown(id)">
-                                Action <font-awesome-icon :icon="['fas', 'angle-down']" />
-                            </button>
-                            <div :ref="el => $refs[`dropdown-${id}`] = el"
-                                class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
-                                <div class="py-1">
-                                    <!-- View Button -->
-                                    <button @click.stop="viewDonor(id)"
-                                    class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <font-awesome-icon :icon="['fas', 'eye']" />
-                                    View
-                                    </button>
-                                    <button @click.stop="editDonor(id)"
-                                        class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <font-awesome-icon :icon="['fas', 'pen-to-square']" />
-                                        Edit
-                                    </button>
-                                    <button @click.stop="deleteDonor(id)"
-                                        class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                        <font-awesome-icon :icon="['fas', 'trash']" />
-                                        Delete
-                                    </button>
+                <div class="overflow-auto">
+                    <EasyDataTable :headers="headers" :items="filteredDonors" header-text-direction="left"
+                        rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination
+                        class="custom-table min-w-[700px]">
+                        <template #item-actions="{ id }">
+                            <div class="relative inline-block text-left">
+                                <button :data-dropdown-button="id"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
+                                    @click.stop="toggleDropdown(id)">
+                                    Action <font-awesome-icon :icon="['fas', 'angle-down']" />
+                                </button>
+                                <div :ref="el => $refs[`dropdown-${id}`] = el"
+                                    class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
+                                    <div class="py-1">
+                                        <!-- View Button -->
+                                        <button @click.stop="viewDonor(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'eye']" />
+                                            View
+                                        </button>
+                                        <button @click.stop="editDonor(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'pen-to-square']" />
+                                            Edit
+                                        </button>
+                                        <button @click.stop="deleteDonor(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'trash']" />
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </template>
-                </EasyDataTable>
+                        </template>
+                    </EasyDataTable>
+                </div>
             </div>
         </div>
 
