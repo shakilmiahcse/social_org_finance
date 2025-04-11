@@ -2,8 +2,11 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
+import Swal from 'sweetalert2';
+import { useToast } from 'vue-toastification';
 import { ref } from 'vue';
 
+const toast = useToast();
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Transactions', href: '/transactions' },
     { title: 'Create', href: '/transactions/create' },
@@ -28,10 +31,21 @@ const form = useForm({
     status: 'completed', // Default status
 });
 
+
+// Submit handler
 const submit = () => {
     form.post('/transactions', {
         onSuccess: () => {
+            toast.success('transactions created successfully!');
             router.visit('/transactions');
+        },
+        onError: (errors) => {
+            Swal.fire({
+                title: 'Validation Error',
+                text: Object.values(errors).join('\n'),
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
         },
     });
 };
