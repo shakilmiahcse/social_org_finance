@@ -6,6 +6,8 @@ use App\Models\Fund;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class FundController extends Controller
 {
@@ -15,7 +17,30 @@ class FundController extends Controller
     public function index()
     {
         $funds = Fund::with(['createdBy', 'updatedBy'])
-            ->orderBy('created_at', 'desc')
+            ->leftJoin('transactions as t', 'funds.id', '=', 't.fund_id')
+            ->select(
+                'funds.id',
+                'funds.name',
+                'funds.description',
+                'funds.type',
+                'funds.created_by',
+                'funds.updated_by',
+                'funds.created_at',
+                'funds.updated_at',
+                DB::raw("SUM(CASE WHEN t.type = 'credit' THEN t.amount ELSE 0 END) -
+                        SUM(CASE WHEN t.type = 'debit' THEN t.amount ELSE 0 END) as total_sum_amount")
+            )
+            ->groupBy([
+                'funds.id',
+                'funds.name',
+                'funds.description',
+                'funds.type',
+                'funds.created_by',
+                'funds.updated_by',
+                'funds.created_at',
+                'funds.updated_at'
+            ])
+            ->orderBy('funds.created_at', 'desc')
             ->get()
             ->map(function ($fund) {
                 return [
@@ -23,7 +48,7 @@ class FundController extends Controller
                     'name' => $fund->name,
                     'description' => $fund->description,
                     'type' => $fund->type,
-                    'total_amount' => number_format($fund->total_amount, 2),
+                    'total_amount' => number_format($fund->total_sum_amount, 2),
                     'createdBy' => $fund->createdBy ? ['name' => $fund->createdBy->name] : null,
                     'updatedBy' => $fund->updatedBy ? ['name' => $fund->updatedBy->name] : null,
                     'created_at' => Carbon::parse($fund->created_at)->format('j F, Y g:i A'),

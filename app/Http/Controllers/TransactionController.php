@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
@@ -71,9 +72,8 @@ class TransactionController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate incoming request data
+        // Validate incoming request data (exclude txn_id)
         $validated = $request->validate([
-            'txn_id' => 'required|string|unique:transactions,txn_id|max:255',
             'donor_id' => 'required|exists:donors,id',
             'fund_id' => 'required|exists:funds,id',
             'amount' => 'required|numeric|min:0',
@@ -85,9 +85,14 @@ class TransactionController extends Controller
             'status' => 'nullable|in:pending,completed,canceled',
         ]);
 
+        // Get the last transaction id
+        $lastTransaction = Transaction::latest('id')->first();
+        $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+        $txn_id = 'TXN' . $nextId;
+
         // Create a new transaction record
         $transaction = Transaction::create([
-            'txn_id' => $validated['txn_id'],
+            'txn_id' => $txn_id,
             'donor_id' => $validated['donor_id'],
             'fund_id' => $validated['fund_id'],
             'amount' => $validated['amount'],
@@ -97,9 +102,10 @@ class TransactionController extends Controller
             'reference' => $validated['reference'],
             'note' => $validated['note'],
             'status' => $validated['status'] ?? 'pending',
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
         ]);
 
-        // Redirect back to transactions page with a success message
         return redirect()->route('transactions.index')->with('success', 'Transaction created successfully!');
     }
 

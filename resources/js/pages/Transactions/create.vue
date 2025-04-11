@@ -20,12 +20,12 @@ const form = useForm({
     donor_id: '', // Donor ID
     fund_id: '', // Fund ID
     amount: '', // Amount
-    type: '', // Transaction type (credit or debit)
+    type: 'credit', // Transaction type (credit or debit)
     purpose: '', // Purpose
     payment_method: '', // Payment method (e.g., cash, bank, etc.)
     reference: '', // Transaction reference
     note: '', // Additional notes
-    status: 'pending', // Default status
+    status: 'completed', // Default status
 });
 
 const submit = () => {
@@ -40,21 +40,13 @@ const submit = () => {
 <template>
     <Head title="Create Transaction" />
     <AppLayout :breadcrumbs="breadcrumbs">
+        <form @submit.prevent="submit" class="space-y-4">
         <div class="p-4 space-y-4">
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                 <h1 class="text-2xl font-bold mb-6">Create New Transaction</h1>
 
-                <form @submit.prevent="submit" class="space-y-4">
                     <!-- Three-column grid layout -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- Transaction ID -->
-                        <div>
-                            <label class="block font-semibold mb-1">Transaction ID</label>
-                            <input v-model="form.txn_id" type="text" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.txn_id }" />
-                            <div v-if="form.errors.txn_id" class="text-red-500 text-sm">{{ form.errors.txn_id }}</div>
-                        </div>
-
                         <!-- Donor ID (Dropdown) -->
                         <div>
                             <label class="block font-semibold mb-1">Donor</label>
@@ -70,9 +62,9 @@ const submit = () => {
 
                         <!-- Fund ID (Dropdown) -->
                         <div>
-                            <label class="block font-semibold mb-1">Fund</label>
+                            <label class="block font-semibold mb-1">Fund <span class="text-red-500">*</span></label>
                             <select v-model="form.fund_id" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.fund_id }">
+                                :class="{ 'border-red-500': form.errors.fund_id }" required>
                                 <option value="">Select Fund</option>
                                 <option v-for="fund in funds" :key="fund.id" :value="fund.id">
                                     {{ fund.name }}
@@ -83,74 +75,101 @@ const submit = () => {
 
                         <!-- Amount -->
                         <div>
-                            <label class="block font-semibold mb-1">Amount</label>
+                            <label class="block font-semibold mb-1">Amount <span class="text-red-500">*</span></label>
                             <input v-model="form.amount" type="number" step="0.01" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.amount }" />
+                                :class="{ 'border-red-500': form.errors.amount }" placeholder="Enter Amount" required />
                             <div v-if="form.errors.amount" class="text-red-500 text-sm">{{ form.errors.amount }}</div>
                         </div>
 
-                        <!-- Type -->
+                        <!-- Payment Method -->
                         <div>
-                            <label class="block font-semibold mb-1">Type</label>
-                            <select v-model="form.type" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.type }">
-                                <option value="">Select Type</option>
-                                <option value="credit">Credit</option>
-                                <option value="debit">Debit</option>
+                            <label class="block font-semibold mb-1">Payment Method <span class="text-red-500">*</span></label>
+                            <select v-model="form.payment_method" class="w-full border rounded px-3 py-2"
+                                :class="{ 'border-red-500': form.errors.payment_method }" required>
+                                <option value="">Select Payment Method</option>
+                                <option value="cash">Cash</option>
+                                <option value="bkash">bkash</option>
+                                <option value="bank">Bank</option>
                             </select>
-                            <div v-if="form.errors.type" class="text-red-500 text-sm">{{ form.errors.type }}</div>
+                            <div v-if="form.errors.payment_method" class="text-red-500 text-sm">{{
+                                form.errors.payment_method }}</div>
                         </div>
 
                         <!-- Purpose -->
                         <div>
                             <label class="block font-semibold mb-1">Purpose</label>
                             <input v-model="form.purpose" type="text" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.purpose }" />
+                                :class="{ 'border-red-500': form.errors.purpose }" placeholder="Enter purpose" />
                             <div v-if="form.errors.purpose" class="text-red-500 text-sm">{{ form.errors.purpose }}</div>
-                        </div>
-
-                        <!-- Payment Method -->
-                        <div>
-                            <label class="block font-semibold mb-1">Payment Method</label>
-                            <select v-model="form.payment_method" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.payment_method }">
-                                <option value="">Select Payment Method</option>
-                                <option value="cash">Cash</option>
-                                <option value="bkash">bkash</option>
-                                <option value="card">Card</option>
-                                <option value="bank">Bank</option>
-                            </select>
-                            <div v-if="form.errors.payment_method" class="text-red-500 text-sm">{{ form.errors.payment_method }}</div>
                         </div>
 
                         <!-- Reference -->
                         <div>
                             <label class="block font-semibold mb-1">Reference</label>
                             <input v-model="form.reference" type="text" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.reference }" />
+                                :class="{ 'border-red-500': form.errors.reference }" placeholder="Enter reference" />
                             <div v-if="form.errors.reference" class="text-red-500 text-sm">{{ form.errors.reference }}</div>
+                        </div>
+
+                        <div>
+                            <label for="status" class="block font-semibold mb-1">
+                                Status
+                            </label>
+                            <select v-model="form.status" id="status" class="w-full border rounded px-3 py-2">
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                            <div v-if="form.errors.status" class="text-red-500 text-sm">{{ form.errors.status }}</div>
+                        </div>
+
+                        <!-- Type (Smart Radio Buttons) -->
+                        <div>
+                            <label class="block font-semibold mb-1">Type</label>
+                            <div class="flex gap-2">
+                                <!-- Credit Option -->
+                                <label class="inline-flex items-center">
+                                    <input type="radio" value="credit" v-model="form.type" class="hidden peer" />
+                                    <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer transition-colors duration-200
+                peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800
+                hover:bg-gray-100">
+                                        Credit
+                                    </span>
+                                </label>
+                                <!-- Debit Option -->
+                                <label class="inline-flex items-center">
+                                    <input type="radio" value="debit" v-model="form.type" class="hidden peer" />
+                                    <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer transition-colors duration-200
+                peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800
+                hover:bg-gray-100">
+                                        Debit
+                                    </span>
+                                </label>
+                            </div>
+                            <div v-if="form.errors.type" class="text-red-500 text-sm">{{ form.errors.type }}</div>
                         </div>
                     </div>
 
                     <div>
                         <label class="block font-semibold mb-1">Note</label>
                         <textarea v-model="form.note" class="w-full border rounded px-3 py-2"
-                            :class="{ 'border-red-500': form.errors.note }"></textarea>
+                            :class="{ 'border-red-500': form.errors.note }" placeholder="Enter note"></textarea>
                         <div v-if="form.errors.note" class="text-red-500 text-sm">{{ form.errors.note }}</div>
                     </div>
 
-                    <div class="flex justify-between items-center mt-6">
-                        <button type="button" @click="$inertia.visit('/transactions')"
-                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded">
-                            Back
-                        </button>
-                        <button type="submit"
-                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold">
-                            Save Transaction
-                        </button>
-                    </div>
-                </form>
+
+                </div>
+                <div class="flex justify-between items-center mt-6">
+                            <button type="button" @click="$inertia.visit('/transactions')"
+                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded">
+                                <font-awesome-icon :icon="['fas', 'arrow-left']" /> Back
+                            </button>
+                            <button type="submit"
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold">
+                                Save Transaction
+                            </button>
+                        </div>
             </div>
-        </div>
+
+        </form>
     </AppLayout>
 </template>

@@ -18,22 +18,30 @@ const emit = defineEmits(['close']);
 const isOpen = ref(false);
 const form = ref({
     id: null,
-    reference_no: '',
-    description: '',
-    type: 'credit',
+    donor_id: null,
+    fund_id: null,
     amount: '0.00',
-    transaction_date: '',
+    type: 'credit',
+    purpose: '',
+    payment_method: 'cash',
+    reference: '',
+    note: '',
+    status: 'pending',
 });
 
 watch(() => props.transaction, (newTransaction) => {
     if (newTransaction) {
         form.value = {
             id: newTransaction.id,
-            reference_no: newTransaction.reference_no,
-            description: newTransaction.description,
-            type: newTransaction.type,
+            donor_id: newTransaction.donor_id,
+            fund_id: newTransaction.fund_id,
             amount: newTransaction.amount,
-            transaction_date: newTransaction.transaction_date,
+            type: newTransaction.type,
+            purpose: newTransaction.purpose,
+            payment_method: newTransaction.payment_method,
+            reference: newTransaction.reference,
+            note: newTransaction.note,
+            status: newTransaction.status,
         };
     }
 });
@@ -81,26 +89,19 @@ defineExpose({
                     <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Edit Transaction</h3>
                     <form @submit.prevent="submit">
                         <div class="mb-4">
-                            <label for="reference_no" class="block text-sm font-medium text-gray-700">
-                                Reference No <span class="text-red-500">*</span>
+                            <label for="donor_id" class="block text-sm font-medium text-gray-700">
+                                Donor <span class="text-red-500">*</span>
                             </label>
-                            <input v-model="form.reference_no" type="text" id="reference_no" required
+                            <input v-model="form.donor_id" type="number" id="donor_id" required
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
 
                         <div class="mb-4">
-                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea v-model="form.description" id="description" rows="3"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
-                            <select v-model="form.type" id="type"
+                            <label for="fund_id" class="block text-sm font-medium text-gray-700">
+                                Fund <span class="text-red-500">*</span>
+                            </label>
+                            <input v-model="form.fund_id" type="number" id="fund_id" required
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="credit">Credit</option>
-                                <option value="debit">Debit</option>
-                            </select>
                         </div>
 
                         <div class="mb-4">
@@ -112,11 +113,63 @@ defineExpose({
                         </div>
 
                         <div class="mb-4">
-                            <label for="transaction_date" class="block text-sm font-medium text-gray-700">
-                                Transaction Date
+                            <label for="type" class="block text-sm font-medium text-gray-700">
+                                Type <span class="text-red-500">*</span>
                             </label>
-                            <input v-model="form.transaction_date" type="date" id="transaction_date"
+                            <select v-model="form.type" id="type" required
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="credit">Credit</option>
+                                <option value="debit">Debit</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="purpose" class="block text-sm font-medium text-gray-700">
+                                Purpose
+                            </label>
+                            <input v-model="form.purpose" type="text" id="purpose"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="payment_method" class="block text-sm font-medium text-gray-700">
+                                Payment Method <span class="text-red-500">*</span>
+                            </label>
+                            <select v-model="form.payment_method" id="payment_method" required
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="cash">Cash</option>
+                                <option value="bkash">bKash</option>
+                                <option value="card">Card</option>
+                                <option value="bank">Bank</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="reference" class="block text-sm font-medium text-gray-700">
+                                Reference
+                            </label>
+                            <input v-model="form.reference" type="text" id="reference"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="note" class="block text-sm font-medium text-gray-700">
+                                Note
+                            </label>
+                            <textarea v-model="form.note" id="note" rows="3"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="status" class="block text-sm font-medium text-gray-700">
+                                Status
+                            </label>
+                            <select v-model="form.status" id="status"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                                <option value="canceled">Canceled</option>
+                            </select>
                         </div>
                     </form>
                 </div>
