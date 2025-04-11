@@ -48,8 +48,13 @@ class TransactionController extends Controller
                 ];
             });
 
+        $donors = Donor::getDropdown();
+        $funds = Fund::getDropdown();
+
         return Inertia::render('Transactions/Index', [
-            'transactions' => $transactions
+            'transactions' => $transactions,
+            'donors' => $donors,
+            'funds' => $funds
         ]);
     }
 
@@ -58,8 +63,8 @@ class TransactionController extends Controller
      */
     public function create()
     {
-        $donors = Donor::getDropdown();  // Get donor dropdown data
-        $funds = Fund::getDropdown();    // Get fund dropdown data
+        $donors = Donor::getDropdown();
+        $funds = Fund::getDropdown();
 
         return Inertia::render('Transactions/create', [
             'donors' => $donors,

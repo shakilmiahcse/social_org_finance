@@ -27,8 +27,8 @@ class FundController extends Controller
                 'funds.updated_by',
                 'funds.created_at',
                 'funds.updated_at',
-                DB::raw("SUM(CASE WHEN t.type = 'credit' THEN t.amount ELSE 0 END) -
-                        SUM(CASE WHEN t.type = 'debit' THEN t.amount ELSE 0 END) as total_sum_amount")
+                DB::raw("SUM(CASE WHEN t.type = 'credit' AND t.status = 'completed' THEN t.amount ELSE 0 END) -
+                        SUM(CASE WHEN t.type = 'debit' AND t.status = 'completed' THEN t.amount ELSE 0 END) as total_sum_amount")
             )
             ->groupBy([
                 'funds.id',
@@ -78,7 +78,6 @@ class FundController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:main,campaign',
-            'total_amount' => 'required|numeric|min:0',
         ]);
 
         try {
@@ -86,7 +85,6 @@ class FundController extends Controller
                 'name' => $validated['name'],
                 'description' => $validated['description'],
                 'type' => $validated['type'],
-                'total_amount' => $validated['total_amount'],
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
             ]);

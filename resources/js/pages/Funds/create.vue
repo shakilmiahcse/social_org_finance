@@ -11,7 +11,6 @@ const form = ref({
     name: '',
     description: '',
     type: 'campaign',
-    total_amount: '0.00',
 });
 
 const emit = defineEmits(['close']);
@@ -40,7 +39,6 @@ const resetForm = () => {
         name: '',
         description: '',
         type: 'campaign',
-        total_amount: '0.00',
     };
 };
 
@@ -86,22 +84,6 @@ defineExpose({
                                 placeholder="Enter fund description"></textarea>
                         </div>
 
-                        <div class="mb-4">
-                            <label for="type" class="block text-sm font-medium text-gray-700">Type</label>
-                            <select v-model="form.type" id="type"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                <option value="main">Main Fund</option>
-                                <option value="campaign">Campaign Fund</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="total_amount" class="block text-sm font-medium text-gray-700">
-                                Initial Amount <span class="text-red-500">*</span>
-                            </label>
-                            <input v-model="form.total_amount" type="number" step="0.01" min="0" id="total_amount" required
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
                     </form>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
