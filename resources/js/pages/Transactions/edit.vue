@@ -10,6 +10,14 @@ const props = defineProps({
     transaction: {
         type: Object,
         required: true
+    },
+    donors: {
+        type: Array as () => Array<{ id: number, name: string }>,
+        default: () => []
+    },
+    funds: {
+        type: Array as () => Array<{ id: number, name: string }>,
+        default: () => []
     }
 });
 
@@ -93,10 +101,15 @@ defineExpose({
                             <!-- Donor ID -->
                             <div class="mb-3">
                                 <label for="donor_id" class="block text-sm font-medium text-gray-700">
-                                    Donor <span class="text-red-500">*</span>
+                                    Donor
                                 </label>
-                                <input v-model="form.donor_id" type="number" id="donor_id" required
+                                <select v-model="form.donor_id" id="donor_id"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select Donor</option>
+                                    <option v-for="donor in donors" :key="donor.id" :value="donor.id">
+                                        {{ donor.name }}
+                                    </option>
+                                </select>
                             </div>
 
                             <!-- Fund ID -->
@@ -104,8 +117,13 @@ defineExpose({
                                 <label for="fund_id" class="block text-sm font-medium text-gray-700">
                                     Fund <span class="text-red-500">*</span>
                                 </label>
-                                <input v-model="form.fund_id" type="number" id="fund_id" required
+                                <select v-model="form.fund_id" id="fund_id" required
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select Fund</option>
+                                    <option v-for="fund in funds" :key="fund.id" :value="fund.id">
+                                        {{ fund.name }}
+                                    </option>
+                                </select>
                             </div>
 
                             <!-- Amount -->

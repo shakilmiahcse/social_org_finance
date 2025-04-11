@@ -127,14 +127,7 @@ class TransactionController extends Controller
      */
     public function edit(Transaction $transaction)
     {
-        $donors = Donor::getDropdown();
-        $funds = Fund::getDropdown();
-
-        return Inertia::render('Transactions/Edit', [
-            'transaction' => $transaction,
-            'donors' => $donors,
-            'funds' => $funds,
-        ]);
+        //
     }
 
     /**
@@ -143,7 +136,7 @@ class TransactionController extends Controller
     public function update(Request $request, Transaction $transaction)
     {
         $validated = $request->validate([
-            'donor_id' => 'required|exists:donors,id',
+            'donor_id' => 'nullable|exists:donors,id',
             'fund_id' => 'required|exists:funds,id',
             'amount' => 'required|numeric|min:0',
             'type' => 'required|in:credit,debit',

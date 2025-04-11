@@ -234,7 +234,12 @@ onUnmounted(() => {
         </div>
 
         <ViewTransactionModal ref="viewTransactionModal" :transaction="selectedTransaction" />
-        <EditTransactionModal ref="editTransactionModal" :transaction="selectedTransaction" />
+        <EditTransactionModal
+            ref="editTransactionModal"
+            :transaction="selectedTransaction"
+            :donors="donors"
+            :funds="funds"
+        />
     </AppLayout>
 </template>
 
