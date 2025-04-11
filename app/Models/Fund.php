@@ -22,7 +22,7 @@ class Fund extends Model
 
     public static function getDropdown()
     {
-        return self::pluck('name', 'id')->map(function ($name, $id) {
+        return self::whereNull('closed_at')->pluck('name', 'id')->map(function ($name, $id) {
             return ['id' => $id, 'name' => $name];
         });
     }
