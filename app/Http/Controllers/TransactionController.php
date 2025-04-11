@@ -122,7 +122,14 @@ class TransactionController extends Controller
      */
     public function edit(Transaction $transaction)
     {
-        //
+        $donors = Donor::getDropdown();
+        $funds = Fund::getDropdown();
+
+        return Inertia::render('Transactions/Edit', [
+            'transaction' => $transaction,
+            'donors' => $donors,
+            'funds' => $funds,
+        ]);
     }
 
     /**
@@ -130,8 +137,25 @@ class TransactionController extends Controller
      */
     public function update(Request $request, Transaction $transaction)
     {
-        //
+        $validated = $request->validate([
+            'donor_id' => 'required|exists:donors,id',
+            'fund_id' => 'required|exists:funds,id',
+            'amount' => 'required|numeric|min:0',
+            'type' => 'required|in:credit,debit',
+            'purpose' => 'nullable|string|max:255',
+            'payment_method' => 'required|in:cash,bkash,bank',
+            'reference' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:255',
+            'status' => 'nullable|in:pending,completed,canceled',
+        ]);
+
+        $transaction->update(array_merge($validated, [
+            'updated_by' => auth()->id(),
+        ]));
+
+        return redirect()->route('transactions.index')->with('success', 'Transaction updated successfully!');
     }
+
 
     /**
      * Remove the specified resource from storage.

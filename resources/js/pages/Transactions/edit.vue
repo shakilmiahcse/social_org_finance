@@ -47,7 +47,7 @@ watch(() => props.transaction, (newTransaction) => {
 });
 
 const submit = () => {
-    router.put(`/transactions/${form.value.id}`, form.value, {
+    router.put(route('transactions.update', form.value.id), form.value, {
         preserveScroll: true,
         onSuccess: () => {
             toast.success('Transaction updated successfully');
@@ -84,95 +84,121 @@ defineExpose({
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div
-                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Edit Transaction</h3>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-3">Edit Transaction</h3>
                     <form @submit.prevent="submit">
-                        <div class="mb-4">
-                            <label for="donor_id" class="block text-sm font-medium text-gray-700">
-                                Donor <span class="text-red-500">*</span>
-                            </label>
-                            <input v-model="form.donor_id" type="number" id="donor_id" required
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
+                        <!-- Grid for responsive two-column layout -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Donor ID -->
+                            <div class="mb-3">
+                                <label for="donor_id" class="block text-sm font-medium text-gray-700">
+                                    Donor <span class="text-red-500">*</span>
+                                </label>
+                                <input v-model="form.donor_id" type="number" id="donor_id" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
 
-                        <div class="mb-4">
-                            <label for="fund_id" class="block text-sm font-medium text-gray-700">
-                                Fund <span class="text-red-500">*</span>
-                            </label>
-                            <input v-model="form.fund_id" type="number" id="fund_id" required
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
+                            <!-- Fund ID -->
+                            <div class="mb-3">
+                                <label for="fund_id" class="block text-sm font-medium text-gray-700">
+                                    Fund <span class="text-red-500">*</span>
+                                </label>
+                                <input v-model="form.fund_id" type="number" id="fund_id" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
 
-                        <div class="mb-4">
-                            <label for="amount" class="block text-sm font-medium text-gray-700">
-                                Amount <span class="text-red-500">*</span>
-                            </label>
-                            <input v-model="form.amount" type="number" step="0.01" id="amount" required
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
+                            <!-- Amount -->
+                            <div class="mb-3">
+                                <label for="amount" class="block text-sm font-medium text-gray-700">
+                                    Amount <span class="text-red-500">*</span>
+                                </label>
+                                <input v-model="form.amount" type="number" step="0.01" id="amount" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
 
-                        <div class="mb-4">
-                            <label for="type" class="block text-sm font-medium text-gray-700">
-                                Type <span class="text-red-500">*</span>
-                            </label>
-                            <select v-model="form.type" id="type" required
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="credit">Credit</option>
-                                <option value="debit">Debit</option>
-                            </select>
-                        </div>
+                            <!-- Payment Method -->
+                            <div class="mb-3">
+                                <label for="payment_method" class="block text-sm font-medium text-gray-700">
+                                    Payment Method <span class="text-red-500">*</span>
+                                </label>
+                                <select v-model="form.payment_method" id="payment_method" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="cash">Cash</option>
+                                    <option value="bkash">bKash</option>
+                                    <option value="bank">Bank</option>
+                                </select>
+                            </div>
 
-                        <div class="mb-4">
-                            <label for="purpose" class="block text-sm font-medium text-gray-700">
-                                Purpose
-                            </label>
-                            <input v-model="form.purpose" type="text" id="purpose"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
+                            <!-- Purpose -->
+                            <div class="mb-3">
+                                <label for="purpose" class="block text-sm font-medium text-gray-700">
+                                    Purpose
+                                </label>
+                                <input v-model="form.purpose" type="text" id="purpose"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
 
-                        <div class="mb-4">
-                            <label for="payment_method" class="block text-sm font-medium text-gray-700">
-                                Payment Method <span class="text-red-500">*</span>
-                            </label>
-                            <select v-model="form.payment_method" id="payment_method" required
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="cash">Cash</option>
-                                <option value="bkash">bKash</option>
-                                <option value="card">Card</option>
-                                <option value="bank">Bank</option>
-                            </select>
-                        </div>
+                            <!-- Reference -->
+                            <div class="mb-3">
+                                <label for="reference" class="block text-sm font-medium text-gray-700">
+                                    Reference
+                                </label>
+                                <input v-model="form.reference" type="text" id="reference"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
 
-                        <div class="mb-4">
-                            <label for="reference" class="block text-sm font-medium text-gray-700">
-                                Reference
-                            </label>
-                            <input v-model="form.reference" type="text" id="reference"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
+                            <!-- Status -->
+                            <div class="mb-3">
+                                <label for="status" class="block text-sm font-medium text-gray-700">
+                                    Status
+                                </label>
+                                <select v-model="form.status" id="status"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="pending">Pending</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="canceled">Canceled</option>
+                                </select>
+                            </div>
 
-                        <div class="mb-4">
+                            <!-- Type (Smart Radio Buttons) -->
+                            <div class="mb-3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Type <span
+                                        class="text-red-500">*</span></label>
+                                <div class="flex gap-2">
+                                    <!-- Credit Option -->
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" value="credit" v-model="form.type" class="hidden peer" />
+                                        <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer transition-colors duration-200
+                                            peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800
+                                            hover:bg-gray-100">
+                                            Credit
+                                        </span>
+                                    </label>
+                                    <!-- Debit Option -->
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" value="debit" v-model="form.type" class="hidden peer" />
+                                        <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer transition-colors duration-200
+                                            peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800
+                                            hover:bg-gray-100">
+                                            Debit
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- Note -->
+                        <div class="mb-3">
                             <label for="note" class="block text-sm font-medium text-gray-700">
                                 Note
                             </label>
                             <textarea v-model="form.note" id="note" rows="3"
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                         </div>
-
-                        <div class="mb-4">
-                            <label for="status" class="block text-sm font-medium text-gray-700">
-                                Status
-                            </label>
-                            <select v-model="form.status" id="status"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="pending">Pending</option>
-                                <option value="completed">Completed</option>
-                                <option value="canceled">Canceled</option>
-                            </select>
-                        </div>
                     </form>
                 </div>
+
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                     <button type="button" @click="submit"
                         class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
