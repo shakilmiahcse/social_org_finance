@@ -93,20 +93,21 @@ class CampaignAdjustmentController extends Controller
             ]);
 
             // Fetch related fund names using relationships
-            $mainFund = $adjustment->mainFund;          // returns Fund model
-            $campaignFund = $adjustment->campaignFund;  // returns Fund model
+            $mainFund = $adjustment->mainFund;
+            $campaignFund = $adjustment->campaignFund;
 
-            // Get next transaction IDs
+            // Generate unique transaction IDs based on current timestamp
             $lastTransaction = Transaction::latest('id')->first();
             $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
-            $txn_id1 = 'TXN' . $nextId;
-            $txn_id2 = 'TXN' . ($nextId + 1);
+            $txn_id1 = 'TXN' . time() . $nextId;
+            $txn_id2 = 'TXN' . time() . $nextId + 1;
 
             if ($adjustment->type === 'to_campaign') {
                 // Debit main fund
                 Transaction::create([
                     'txn_id' => $txn_id1,
                     'fund_id' => $mainFund->id,
+                    'adjustment_id' => $adjustment->id,
                     'amount' => $adjustment->amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
@@ -121,6 +122,7 @@ class CampaignAdjustmentController extends Controller
                 Transaction::create([
                     'txn_id' => $txn_id2,
                     'fund_id' => $campaignFund->id,
+                    'adjustment_id' => $adjustment->id,
                     'amount' => $adjustment->amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
@@ -137,6 +139,7 @@ class CampaignAdjustmentController extends Controller
                 Transaction::create([
                     'txn_id' => $txn_id1,
                     'fund_id' => $campaignFund->id,
+                    'adjustment_id' => $adjustment->id,
                     'amount' => $adjustment->amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
@@ -151,6 +154,7 @@ class CampaignAdjustmentController extends Controller
                 Transaction::create([
                     'txn_id' => $txn_id2,
                     'fund_id' => $mainFund->id,
+                    'adjustment_id' => $adjustment->id,
                     'amount' => $adjustment->amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
@@ -171,6 +175,7 @@ class CampaignAdjustmentController extends Controller
             return back()->withErrors(['error' => 'Something went wrong. Please try again.']);
         }
     }
+
 
 
     /**
@@ -207,18 +212,10 @@ class CampaignAdjustmentController extends Controller
 
             $adjustment = CampaignAdjustment::findOrFail($id);
 
-            // Delete associated transactions based on type
-            if ($adjustment->type === 'to_campaign') {
-                Transaction::where('fund_id', $adjustment->main_fund_id)->delete();
-                Transaction::where('fund_id', $adjustment->campaign_fund_id)->delete();
-            }
+            // Only delete transactions related to this specific adjustment
+            Transaction::where('adjustment_id', $adjustment->id)->delete();
 
-            if ($adjustment->type === 'to_main') {
-                Transaction::where('fund_id', $adjustment->campaign_fund_id)->delete();
-                Transaction::where('fund_id', $adjustment->main_fund_id)->delete();
-            }
-
-            // Delete the adjustment record
+            // Delete the adjustment itself
             $adjustment->delete();
 
             DB::commit();

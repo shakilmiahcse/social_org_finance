@@ -55,7 +55,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const headers = [
-    { text: 'Txn ID', value: 'txn_id', sortable: true, class: 'font-bold' },
+    { text: 'TXN ID', value: 'txn_id', sortable: true, class: 'font-bold' },
     { text: 'Donor', value: 'donor.name', sortable: true },
     { text: 'Fund', value: 'fund.name', sortable: true },
     { text: 'Amount', value: 'amount', sortable: true },
@@ -129,7 +129,7 @@ const exportToExcel = () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Transactions');
     worksheet.columns = [
-        { header: 'Txn ID', key: 'txn_id' },
+        { header: 'TXN ID', key: 'txn_id' },
         { header: 'Donor', key: 'donor.name' },
         { header: 'Fund', key: 'fund.name' },
         { header: 'Amount', key: 'amount' },
@@ -146,7 +146,7 @@ const exportToExcel = () => {
 const exportToPDF = () => {
     const doc = new jsPDF();
     autoTable(doc, {
-        head: [['Txn ID', 'Donor', 'Fund', 'Amount', 'Type', 'Status']],
+        head: [['TXN ID', 'Donor', 'Fund', 'Amount', 'Type', 'Status']],
         body: props.transactions.map(t => [
             t.txn_id,
             t.donor?.name || '',

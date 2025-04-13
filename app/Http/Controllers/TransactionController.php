@@ -93,7 +93,7 @@ class TransactionController extends Controller
         // Get the last transaction id
         $lastTransaction = Transaction::latest('id')->first();
         $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
-        $txn_id = 'TXN' . $nextId;
+        $txn_id = 'TXN' . time() . $nextId;
 
         // Create a new transaction record
         $transaction = Transaction::create([

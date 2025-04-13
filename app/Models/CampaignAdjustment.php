@@ -14,7 +14,7 @@ class CampaignAdjustment extends Model
     {
         return $this->belongsTo(Fund::class, 'campaign_fund_id');
     }
-    
+
     public function mainFund()
     {
         return $this->belongsTo(Fund::class, 'main_fund_id');
