@@ -26,4 +26,18 @@ class Fund extends Model
             return ['id' => $id, 'name' => $name];
         });
     }
+
+    public static function getCampaignDropdown()
+    {
+        return self::whereNull('closed_at')->where('type', 'campaign')->pluck('name', 'id')->map(function ($name, $id) {
+            return ['id' => $id, 'name' => $name];
+        });
+    }
+
+    public static function getMainDropdown()
+    {
+        return self::where('type', 'main')->pluck('name', 'id')->map(function ($name, $id) {
+            return ['id' => $id, 'name' => $name];
+        });
+    }
 }
