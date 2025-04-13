@@ -89,6 +89,7 @@ class CampaignAdjustmentController extends Controller
                 'campaign_fund_id' => $validated['campaign_fund_id'],
                 'note' => $validated['note'] ?? null,
                 'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
             ]);
 
             // Fetch related fund names using relationships
@@ -113,6 +114,7 @@ class CampaignAdjustmentController extends Controller
                     'purpose' => 'Campaign Adjustment',
                     'note' => 'Adjustment to Campaign Fund: ' . $campaignFund->name,
                     'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
                 ]);
 
                 // Credit campaign fund
@@ -126,6 +128,7 @@ class CampaignAdjustmentController extends Controller
                     'purpose' => 'Campaign Adjustment',
                     'note' => 'Received from Main Fund: ' . $mainFund->name,
                     'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
                 ]);
             }
 
@@ -141,6 +144,7 @@ class CampaignAdjustmentController extends Controller
                     'purpose' => 'Campaign Return',
                     'note' => 'Returned to Main Fund: ' . $mainFund->name,
                     'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
                 ]);
 
                 // Credit main fund
@@ -154,6 +158,7 @@ class CampaignAdjustmentController extends Controller
                     'purpose' => 'Campaign Return',
                     'note' => 'Received from Campaign Fund: ' . $campaignFund->name,
                     'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
                 ]);
             }
 
@@ -195,8 +200,34 @@ class CampaignAdjustmentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        try {
+            DB::beginTransaction();
+
+            $adjustment = CampaignAdjustment::findOrFail($id);
+
+            // Delete associated transactions based on type
+            if ($adjustment->type === 'to_campaign') {
+                Transaction::where('fund_id', $adjustment->main_fund_id)->delete();
+                Transaction::where('fund_id', $adjustment->campaign_fund_id)->delete();
+            }
+
+            if ($adjustment->type === 'to_main') {
+                Transaction::where('fund_id', $adjustment->campaign_fund_id)->delete();
+                Transaction::where('fund_id', $adjustment->main_fund_id)->delete();
+            }
+
+            // Delete the adjustment record
+            $adjustment->delete();
+
+            DB::commit();
+            return redirect()->route('adjustments.index')->with('success', 'Adjustment and related transactions deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            report($e);
+            return back()->withErrors(['error' => 'Failed to delete adjustment. Please try again.']);
+        }
     }
+
 }

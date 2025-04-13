@@ -11,7 +11,7 @@ import { saveAs } from 'file-saver';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
-// import ViewAdjustmentModal from './view.vue';
+import ViewAdjustmentModal from './view.vue';
 
 const toast = useToast();
 const searchTerm = ref('');
@@ -27,6 +27,7 @@ const props = defineProps({
             note: string;
             campaign_fund_name: string;
             type: string;
+            main_name: string;
             createdBy?: { name: string };
             created_at: string;
         }>,
