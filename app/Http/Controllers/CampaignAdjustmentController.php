@@ -18,15 +18,13 @@ class CampaignAdjustmentController extends Controller
      */
     public function index()
     {
-        $adjustments = CampaignAdjustment::with(['fund', 'createdBy', 'updatedBy'])
+        $adjustments = CampaignAdjustment::with(['createdBy', 'updatedBy'])
             ->leftJoin('funds as main', 'campaign_adjustments.main_fund_id', '=', 'main.id')
             ->leftJoin('funds as campaign', 'campaign_adjustments.campaign_fund_id', '=', 'campaign.id')
             ->select(
                 'campaign_adjustments.*',
                 'campaign.name as campaign_fund_name',
-                'campaign.type as campaign_fund_type',
                 'main.name as main_fund_name',
-                'main.type as main_fund_type',
             )
             ->orderBy('campaign_adjustments.created_at', 'desc')
             ->get()
@@ -35,10 +33,9 @@ class CampaignAdjustmentController extends Controller
                     'id' => $adjustment->id,
                     'adjustment_amount' => number_format($adjustment->amount, 2),
                     'note' => $adjustment->note,
-                    'fund_name' => $adjustment->campaign_fund_name,
-                    'fund_type' => $adjustment->campaign_fund_type,
+                    'campaign_fund_name' => $adjustment->campaign_fund_name,
                     'main_name' => $adjustment->main_fund_name,
-                    'main_type' => $adjustment->main_fund_type,
+                    'type' => $adjustment->type,
                     'createdBy' => $adjustment->createdBy ? ['name' => $adjustment->createdBy->name] : null,
                     'updatedBy' => $adjustment->updatedBy ? ['name' => $adjustment->updatedBy->name] : null,
                     'created_at' => Carbon::parse($adjustment->created_at)->format('j F, Y g:i A'),

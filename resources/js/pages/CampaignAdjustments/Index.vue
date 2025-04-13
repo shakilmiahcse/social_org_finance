@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useToast } from 'vue-toastification';
-import EasyDataTable from 'vue3-easy-data-table';
-import 'vue3-easy-data-table/dist/style.css';
-import Swal from 'sweetalert2';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router, Link } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
-import AppLayout from '@/layouts/AppLayout.vue';
+import EasyDataTable from 'vue3-easy-data-table';
+import 'vue3-easy-data-table/dist/style.css';
+import ExcelJS from 'exceljs';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { saveAs } from 'file-saver';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import Swal from 'sweetalert2';
+import { useToast } from 'vue-toastification';
+// import ViewAdjustmentModal from './view.vue';
 
 const toast = useToast();
 const searchTerm = ref('');
+const viewAdjustmentModal = ref();
 const selectedAdjustment = ref(null);
 const $refs = ref<Record<string, HTMLElement>>({});
 
@@ -19,8 +25,8 @@ const props = defineProps({
             id: number;
             adjustment_amount: string;
             note: string;
-            fund_name: string;
-            fund_type: string;
+            campaign_fund_name: string;
+            type: string;
             createdBy?: { name: string };
             created_at: string;
         }>,
@@ -34,7 +40,7 @@ const props = defineProps({
 
 const filteredAdjustments = computed(() =>
     props.adjustments.filter(a =>
-        a.fund_name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        a.campaign_fund_name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
         a.note.toLowerCase().includes(searchTerm.value.toLowerCase())
     )
 );
@@ -45,8 +51,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const headers = [
     { text: 'Adjustment Amount', value: 'adjustment_amount', sortable: true, class: 'font-bold' },
-    { text: 'Fund Name', value: 'fund_name', sortable: true },
-    { text: 'Fund Type', value: 'fund_type', sortable: true },
+    { text: 'Campaign Fund', value: 'campaign_fund_name', sortable: true },
+    { text: 'Type', value: 'type', sortable: true },
+    { text: 'Main Fund', value: 'main_name', sortable: true },
     { text: 'Note', value: 'note', sortable: true },
     { text: 'Created By', value: 'createdBy.name', sortable: true },
     { text: 'Created At', value: 'created_at', sortable: true },
@@ -57,7 +64,7 @@ const viewAdjustment = (id: number) => {
     const adjustment = props.adjustments.find(a => a.id === id);
     if (adjustment) {
         selectedAdjustment.value = adjustment;
-        // Open modal logic for view
+        viewAdjustmentModal.value.open();
     }
 };
 
@@ -103,6 +110,39 @@ const toggleDropdown = (id: number) => {
     }
 };
 
+const exportToExcel = () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Adjustments');
+    worksheet.columns = [
+        { header: 'Adjustment Amount', key: 'adjustment_amount' },
+        { header: 'Campaign Fund', key: 'campaign_fund_name' },
+        { header: 'Type', key: 'type' },
+        { header: 'Main Fund', key: 'main_name' },
+        { header: 'Note', key: 'note' },
+        { header: 'Created By', key: 'createdBy.name' },
+    ];
+    worksheet.addRows(props.adjustments);
+    workbook.xlsx.writeBuffer().then((buffer) => {
+        saveAs(new Blob([buffer]), 'adjustments.xlsx');
+    });
+};
+
+const exportToPDF = () => {
+    const doc = new jsPDF();
+    autoTable(doc, {
+        head: [['Adjustment Amount', 'Fund Name', 'Fund Type', 'Note', 'Created By']],
+        body: props.adjustments.map(a => [
+            a.adjustment_amount,
+            a.campaign_fund_name,
+            a.type,
+            a.main_name,
+            a.note,
+            a.createdBy?.name || ''
+        ]),
+    });
+    doc.save('adjustments.pdf');
+};
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
 });
@@ -120,13 +160,23 @@ onUnmounted(() => {
                 <div class="flex justify-between items-center">
                     <h1 class="text-2xl font-bold">Campaign Adjustments List</h1>
                     <Link href="/adjustments/create"
-                            class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded adjustment flex items-center">
-                        <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                        Add Adjustment
+                        class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
+                    <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
+                    Add Adjustment
                     </Link>
                 </div>
 
                 <div class="flex justify-between items-center flex-wrap gap-2">
+                    <div class="flex gap-2">
+                        <button @click="exportToExcel"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
+                            Export Excel
+                        </button>
+                        <button @click="exportToPDF"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
+                            Export PDF
+                        </button>
+                    </div>
                     <div>
                         <input v-model="searchTerm" type="text" placeholder="Search adjustments..."
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
@@ -164,15 +214,21 @@ onUnmounted(() => {
                 </div>
             </div>
         </div>
+
+        <ViewAdjustmentModal ref="viewAdjustmentModal" :adjustment="selectedAdjustment" />
     </AppLayout>
 </template>
 
-<style scoped>
+<style>
 .custom-table {
     --easy-table-footer-background-color: #dfe0e1;
     --easy-table-footer-font-size: 14px;
     --easy-table-header-background-color: #f1f3f5;
     --easy-table-header-font-size: 14px;
     --easy-table-header-font-color: #495057;
+}
+
+.custom-table .font-bold {
+    font-weight: bold !important;
 }
 </style>
