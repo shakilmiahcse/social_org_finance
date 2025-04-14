@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Settings\FundTypeController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -18,4 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/Appearance');
     })->name('appearance');
+
+    Route::get('settings/fund-type', [FundTypeController::class, 'edit'])->name('fund-type.edit');
+    Route::put('settings/fund-type', [FundTypeController::class, 'update'])->name('fund-type.update');
 });

@@ -18,6 +18,10 @@ const sidebarNavItems: NavItem[] = [
         title: 'Appearance',
         href: '/settings/appearance',
     },
+    {
+        title: 'Fund Type',
+        href: '/settings/fund-type',
+    },
 ];
 
 const page = usePage();
