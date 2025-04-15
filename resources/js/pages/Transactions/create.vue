@@ -5,8 +5,12 @@ import { type BreadcrumbItem } from '@/types';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
 import { ref } from 'vue';
+import AddDonorModal from '../Donors/create.vue';
 
 const toast = useToast();
+const addDonorModal = ref();
+const addDonor = () => addDonorModal.value.open();
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Transactions', href: '/transactions' },
     { title: 'Create', href: '/transactions/create' },
@@ -63,16 +67,37 @@ const submit = () => {
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- Donor ID (Dropdown) -->
                         <div>
-                            <label class="block font-semibold mb-1">Donor</label>
-                            <select v-model="form.donor_id" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.donor_id }">
+                        <label class="block font-semibold mb-1">Donor</label>
+
+                        <!-- Flex container to align select and button side-by-side -->
+                        <div class="flex space-x-2">
+                            <!-- Select: 85% width -->
+                            <div class="w-[85%]">
+                            <select v-model="form.donor_id"
+                                    class="w-full h-full border rounded px-3 py-2"
+                                    :class="{ 'border-red-500': form.errors.donor_id }">
                                 <option value="">Select Donor</option>
                                 <option v-for="donor in donors" :key="donor.id" :value="donor.id">
-                                    {{ donor.name }}
+                                {{ donor.name }}
                                 </option>
                             </select>
-                            <div v-if="form.errors.donor_id" class="text-red-500 text-sm">{{ form.errors.donor_id }}</div>
+                            </div>
+
+                            <!-- Button: 15% width -->
+                            <div class="w-[15%]">
+                            <button @click="addDonor"
+                                    class="w-full h-full bg-gray-500 hover:bg-gray-600 text-white text-sm px-2 py-2 rounded flex items-center justify-center transition">
+                                <font-awesome-icon :icon="['fas', 'plus']" />
+                            </button>
+                            </div>
                         </div>
+
+                        <!-- Error message -->
+                        <div v-if="form.errors.donor_id" class="text-red-500 text-sm mt-1">
+                            {{ form.errors.donor_id }}
+                        </div>
+                        </div>
+
 
                         <!-- Fund ID (Dropdown) -->
                         <div>
@@ -185,5 +210,7 @@ const submit = () => {
             </div>
 
         </form>
+                <AddDonorModal ref="addDonorModal" />
+
     </AppLayout>
 </template>

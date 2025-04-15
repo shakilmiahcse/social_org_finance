@@ -52,13 +52,16 @@ class DonorController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255|unique:donors,email',
             'phone' => 'nullable|string|max:20',
-            'phone' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
         ]);
 
         $validated['created_by'] = auth()->id();
-        Donor::create($validated);
+       $donor =  Donor::create($validated);
 
-        return redirect()->back()->with('success', 'Donor created successfully');
+       return redirect()->back()->with([
+        'success' => 'Donor created successfully',
+        'new_donor' => $donor->toArray() // Pass the donor as array
+    ]);
     }
 
     /**
