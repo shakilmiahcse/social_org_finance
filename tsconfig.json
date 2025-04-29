@@ -42,8 +42,10 @@
         "types": [
             "vite/client",
             "vue/tsx",
-            "./resources/js/types"
-        ] /* Specify type package names to be included without being referenced in a source file. */,
+            "./resources/js/types",
+            "html2canvas"
+        ],
+        "lib": ["DOM", "ES2020"] /* Specify type package names to be included without being referenced in a source file. */,
         // "allowUmdGlobalAccess": true,                     /* Allow accessing UMD globals from modules. */
         // "moduleSuffixes": [],                             /* List of file name suffixes to search when resolving a module. */
         // "allowImportingTsExtensions": true,               /* Allow imports to include TypeScript file extensions. Requires '--moduleResolution bundler' and either '--noEmit' or '--emitDeclarationOnly' to be set. */
@@ -122,7 +124,7 @@
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
-        "resources/js/**/*.tsx", 
+        "resources/js/**/*.tsx",
         "resources/js/**/*.vue"
     ]
 }

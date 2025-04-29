@@ -33,4 +33,30 @@ export default defineConfig({
             plugins: [tailwindcss, autoprefixer],
         },
     },
+    optimizeDeps: {
+        include: [
+            'html2canvas',
+            'share-api-polyfill',
+            '@fortawesome/fontawesome-svg-core',
+            '@fortawesome/vue-fontawesome'
+        ],
+        esbuildOptions: {
+            define: {
+                global: 'globalThis' // Add this for html2canvas
+            }
+        }
+    },
+    build: {
+        commonjsOptions: {
+            include: [/html2canvas/, /node_modules/] // Add this
+        },
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    html2canvas: ['html2canvas'],
+                    share: ['share-api-polyfill']
+                }
+            }
+        }
+    }
 });

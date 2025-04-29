@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, router, Link } from '@inertiajs/vue3';
+import { Head, router, Link, usePage } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import EasyDataTable from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
@@ -8,16 +8,19 @@ import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import Swal from 'sweetalert2';
 import EditTransactionModal from './edit.vue';
 import { useToast } from 'vue-toastification';
 import ViewTransactionModal from './view.vue';
+import ReceiptModal from './ReceiptModal.vue';
 
 const toast = useToast();
+const page = usePage();
 const searchTerm = ref('');
 const viewTransactionModal = ref();
 const editTransactionModal = ref();
+const receiptModal = ref();
 const selectedTransaction = ref(null);
 const $refs = ref<Record<string, HTMLElement>>({});
 
@@ -40,6 +43,16 @@ const props = defineProps({
         }>,
         required: true
     },
+});
+
+// Watch for new transactions to show receipt
+watch(() => page.props.newTransaction, (newTransaction) => {
+    if (newTransaction) {
+        selectedTransaction.value = newTransaction;
+        receiptModal.value.open();
+        // Clear the flash so it doesn't show again on refresh
+        router.reload({ only: ['transactions'], preserveScroll: true });
+    }
 });
 
 const filteredTransactions = computed(() =>
@@ -80,6 +93,14 @@ const editTransaction = (id: number) => {
     if (transaction) {
         selectedTransaction.value = transaction;
         editTransactionModal.value.open();
+    }
+};
+
+const showReceipt = (id: number) => {
+    const transaction = props.transactions.find(t => t.id === id);
+    if (transaction) {
+        selectedTransaction.value = transaction;
+        receiptModal.value.open();
     }
 };
 
@@ -222,6 +243,11 @@ onUnmounted(() => {
                                             <font-awesome-icon :icon="['fas', 'pen-to-square']" />
                                             Edit
                                         </button>
+                                        <button @click.stop="showReceipt(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'receipt']" />
+                                            Receipt
+                                        </button>
                                         <button @click.stop="deleteTransaction(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'trash']" />
@@ -237,8 +263,8 @@ onUnmounted(() => {
         </div>
 
         <ViewTransactionModal ref="viewTransactionModal" :transaction="selectedTransaction" />
-        <EditTransactionModal ref="editTransactionModal" :transaction="selectedTransaction" :donors="donors"
-            :funds="funds" />
+        <EditTransactionModal ref="editTransactionModal" :transaction="selectedTransaction" />
+        <ReceiptModal ref="receiptModal" :transaction="selectedTransaction" />
     </AppLayout>
 </template>
 

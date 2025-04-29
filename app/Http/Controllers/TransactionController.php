@@ -111,7 +111,24 @@ class TransactionController extends Controller
             'updated_by' => auth()->id(),
         ]);
 
-        return redirect()->route('transactions.index')->with('success', 'Transaction created successfully!');
+        // Alternative without relationships:
+        $transactionWithDetails = Transaction::query()
+            ->leftJoin('donors', 'transactions.donor_id', '=', 'donors.id')
+            ->leftJoin('funds', 'transactions.fund_id', '=', 'funds.id')
+            ->leftJoin('users as creator', 'transactions.created_by', '=', 'creator.id')
+            ->where('transactions.id', $transaction->id)
+            ->select(
+                'transactions.*',
+                'donors.name as donor_name',
+                'funds.name as fund_name',
+                'creator.name as created_by_name'
+            )
+            ->first();
+
+        return redirect()->route('transactions.index')->with([
+            'success' => 'Transaction created successfully!',
+            'newTransaction' => $transactionWithDetails // Use this instead of $transaction
+        ]);
     }
 
     /**
