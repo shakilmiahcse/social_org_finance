@@ -101,11 +101,11 @@ defineExpose({
                             <!-- Donor ID -->
                             <div class="mb-3">
                                 <label for="donor_id" class="block text-sm font-medium text-gray-700">
-                                    Donor
+                                    Donor/Raiser
                                 </label>
                                 <select v-model="form.donor_id" id="donor_id"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="">Select Donor</option>
+                                    <option value="">Select Donor/Raiser</option>
                                     <option v-for="donor in donors" :key="donor.id" :value="donor.id">
                                         {{ donor.name }}
                                     </option>

@@ -63,10 +63,10 @@ const submit = () => {
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- Donor ID (Dropdown) -->
                         <div>
-                            <label class="block font-semibold mb-1">Donor</label>
+                            <label class="block font-semibold mb-1">Donor/Raiser</label>
                             <select v-model="form.donor_id" class="w-full border rounded px-3 py-2"
                                 :class="{ 'border-red-500': form.errors.donor_id }">
-                                <option value="">Select Donor</option>
+                                <option value="">Select Donor/Raiser</option>
                                 <option v-for="donor in donors" :key="donor.id" :value="donor.id">
                                     {{ donor.name }}
                                 </option>

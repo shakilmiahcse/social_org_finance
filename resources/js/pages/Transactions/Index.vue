@@ -56,7 +56,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const headers = [
     { text: 'TXN ID', value: 'txn_id', sortable: true, class: 'font-bold' },
-    { text: 'Donor', value: 'donor.name', sortable: true },
+    { text: 'Donor/Raiser', value: 'donor.name', sortable: true },
     { text: 'Fund', value: 'fund.name', sortable: true },
     { text: 'Amount', value: 'amount', sortable: true },
     { text: 'Type', value: 'type', sortable: true },

@@ -79,7 +79,7 @@ class TransactionController extends Controller
     {
         // Validate incoming request data (exclude txn_id)
         $validated = $request->validate([
-            'donor_id' => 'required|exists:donors,id',
+            'donor_id' => 'nullable|exists:donors,id',
             'fund_id' => 'required|exists:funds,id',
             'amount' => 'required|numeric|min:0',
             'type' => 'required|in:credit,debit',
