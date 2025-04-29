@@ -163,7 +163,7 @@ onUnmounted(() => {
                     <Link href="/adjustments/create"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
                     <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                    Add Adjustment
+                    Add
                     </Link>
                 </div>
 

@@ -74,7 +74,7 @@ class CampaignAdjustmentController extends Controller
             return [
                 'id' => $fund->id,
                 'name' => $fund->name,
-                'amount' => number_format($fund->total_amount, 2),
+                'amount' => $fund->total_amount,
             ];
         })
         ->values();
