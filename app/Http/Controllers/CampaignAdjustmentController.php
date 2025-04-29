@@ -57,7 +57,27 @@ class CampaignAdjustmentController extends Controller
     public function create()
     {
         $mainFunds = Fund::getMainDropdown();
-        $campaignFunds = Fund::getCampaignDropdown();
+        $campaignFunds = Fund::leftJoin('transactions as t', 'funds.id', '=', 't.fund_id')
+        ->whereNull('funds.closed_at')
+        ->where('funds.type', 'campaign')
+        ->select(
+            'funds.id',
+            'funds.name',
+            DB::raw("
+                SUM(CASE WHEN t.type = 'credit' AND t.status = 'completed' THEN t.amount ELSE 0 END) -
+                SUM(CASE WHEN t.type = 'debit' AND t.status = 'completed' THEN t.amount ELSE 0 END) AS total_amount
+            ")
+        )
+        ->groupBy('funds.id', 'funds.name')
+        ->get()
+        ->map(function ($fund) {
+            return [
+                'id' => $fund->id,
+                'name' => $fund->name,
+                'amount' => number_format($fund->total_amount, 2),
+            ];
+        })
+        ->values();
 
         return Inertia::render('CampaignAdjustments/create', [
             'mainFunds' => $mainFunds,
@@ -71,7 +91,7 @@ class CampaignAdjustmentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:0.01',
+            'amount' => 'required|numeric|not_in:0',
             'type' => 'required|in:to_campaign,to_main',
             'main_fund_id' => 'required|exists:funds,id',
             'campaign_fund_id' => 'required|exists:funds,id',
@@ -81,9 +101,11 @@ class CampaignAdjustmentController extends Controller
         try {
             DB::beginTransaction();
 
+            $amount = abs($validated['amount']);
+
             // Create adjustment record
             $adjustment = CampaignAdjustment::create([
-                'amount' => $validated['amount'],
+                'amount' => $amount,
                 'type' => $validated['type'],
                 'main_fund_id' => $validated['main_fund_id'],
                 'campaign_fund_id' => $validated['campaign_fund_id'],
@@ -100,7 +122,7 @@ class CampaignAdjustmentController extends Controller
             $lastTransaction = Transaction::latest('id')->first();
             $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
             $txn_id1 = 'TXN' . time() . $nextId;
-            $txn_id2 = 'TXN' . time() . $nextId + 1;
+            $txn_id2 = 'TXN' . time() . ($nextId + 1);
 
             if ($adjustment->type === 'to_campaign') {
                 // Debit main fund
@@ -108,7 +130,7 @@ class CampaignAdjustmentController extends Controller
                     'txn_id' => $txn_id1,
                     'fund_id' => $mainFund->id,
                     'adjustment_id' => $adjustment->id,
-                    'amount' => $adjustment->amount,
+                    'amount' => $amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
                     'type' => 'debit',
@@ -123,7 +145,7 @@ class CampaignAdjustmentController extends Controller
                     'txn_id' => $txn_id2,
                     'fund_id' => $campaignFund->id,
                     'adjustment_id' => $adjustment->id,
-                    'amount' => $adjustment->amount,
+                    'amount' => $amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
                     'type' => 'credit',
@@ -140,10 +162,10 @@ class CampaignAdjustmentController extends Controller
                     'txn_id' => $txn_id1,
                     'fund_id' => $campaignFund->id,
                     'adjustment_id' => $adjustment->id,
-                    'amount' => $adjustment->amount,
+                    'amount' => $amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
-                    'type' => 'debit',
+                    'type' => 'credit',
                     'purpose' => 'Campaign Return',
                     'note' => 'Returned to Main Fund: ' . $mainFund->name,
                     'created_by' => auth()->id(),
@@ -155,10 +177,10 @@ class CampaignAdjustmentController extends Controller
                     'txn_id' => $txn_id2,
                     'fund_id' => $mainFund->id,
                     'adjustment_id' => $adjustment->id,
-                    'amount' => $adjustment->amount,
+                    'amount' => $amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
-                    'type' => 'credit',
+                    'type' => 'debit',
                     'purpose' => 'Campaign Return',
                     'note' => 'Received from Campaign Fund: ' . $campaignFund->name,
                     'created_by' => auth()->id(),

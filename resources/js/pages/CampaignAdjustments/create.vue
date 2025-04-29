@@ -4,7 +4,7 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const toast = useToast();
 const breadcrumbs: BreadcrumbItem[] = [
@@ -12,10 +12,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Create', href: '/adjustments/create' },
 ];
 
-// Props from backend
-defineProps<{
+// ✅ Corrected: assign props to variable
+const props = defineProps<{
     mainFunds: { id: number, name: string }[];
-    campaignFunds: { id: number, name: string }[];
+    campaignFunds: { id: number, name: string, amount: string }[];
 }>();
 
 const form = useForm({
@@ -26,7 +26,14 @@ const form = useForm({
     note: '',
 });
 
-// Submit handler
+// ✅ Fix: Watch for changes and auto-fill amount
+watch(() => form.campaign_fund_id, (newVal) => {
+    const fund = props.campaignFunds.find(f => f.id === Number(newVal));
+    form.amount = fund ? fund.amount : '';
+});
+
+
+// ✅ Submit handler
 const submit = () => {
     form.post('/adjustments', {
         onSuccess: () => {
@@ -53,7 +60,6 @@ const submit = () => {
                 <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                     <h1 class="text-2xl font-bold mb-6">Create Campaign Adjustment</h1>
 
-                    <!-- Three-column grid layout -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                         <!-- Main Fund -->
                         <div>
@@ -61,7 +67,7 @@ const submit = () => {
                             <select v-model="form.main_fund_id" class="w-full border rounded px-3 py-2"
                                 :class="{ 'border-red-500': form.errors.main_fund_id }" required>
                                 <option value="">Select Main Fund</option>
-                                <option v-for="main in mainFunds" :key="main.id" :value="main.id">
+                                <option v-for="main in props.mainFunds" :key="main.id" :value="main.id">
                                     {{ main.name }}
                                 </option>
                             </select>
@@ -77,7 +83,7 @@ const submit = () => {
                             <select v-model="form.campaign_fund_id" class="w-full border rounded px-3 py-2"
                                 :class="{ 'border-red-500': form.errors.campaign_fund_id }" required>
                                 <option value="">Select Campaign Fund</option>
-                                <option v-for="campaign in campaignFunds" :key="campaign.id" :value="campaign.id">
+                                <option v-for="campaign in props.campaignFunds" :key="campaign.id" :value="campaign.id">
                                     {{ campaign.name }}
                                 </option>
                             </select>
@@ -86,26 +92,23 @@ const submit = () => {
                             </div>
                         </div>
 
-
-                        <!-- Type (Smart Radio Buttons) -->
+                        <!-- Type Radio Buttons -->
                         <div>
                             <label class="block font-semibold mb-1">Type</label>
                             <div class="flex gap-2">
-                                <!-- To Campaign Option -->
                                 <label class="inline-flex items-center">
                                     <input type="radio" value="to_campaign" v-model="form.type" class="hidden peer" />
-                                    <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer transition-colors duration-200
-                                        peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800
-                                        hover:bg-gray-100">
+                                    <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer
+                                        transition-colors duration-200 peer-checked:bg-gray-800 peer-checked:text-white
+                                        peer-checked:border-gray-800 hover:bg-gray-100">
                                         To Campaign
                                     </span>
                                 </label>
-                                <!-- To Main Fund Option -->
                                 <label class="inline-flex items-center">
                                     <input type="radio" value="to_main" v-model="form.type" class="hidden peer" />
-                                    <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer transition-colors duration-200
-                                        peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800
-                                        hover:bg-gray-100">
+                                    <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer
+                                        transition-colors duration-200 peer-checked:bg-gray-800 peer-checked:text-white
+                                        peer-checked:border-gray-800 hover:bg-gray-100">
                                         To Main Fund
                                     </span>
                                 </label>
@@ -113,11 +116,13 @@ const submit = () => {
                             <div v-if="form.errors.type" class="text-red-500 text-sm">{{ form.errors.type }}</div>
                         </div>
 
-                         <!-- Amount -->
+                        <!-- Amount -->
                         <div>
                             <label class="block font-semibold mb-1">Amount <span class="text-red-500">*</span></label>
-                            <input v-model="form.amount" type="number" step="0.01" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.amount }" placeholder="Enter amount" required />
+                            <input v-model="form.amount" type="text" :class="[
+                                'w-full border rounded px-3 py-2',
+                                form.errors.amount ? 'border-red-500' : ''
+                            ]" placeholder="Auto-filled from campaign fund or enter manually" required />
                             <div v-if="form.errors.amount" class="text-red-500 text-sm">{{ form.errors.amount }}</div>
                         </div>
                     </div>
@@ -131,7 +136,7 @@ const submit = () => {
                     </div>
                 </div>
 
-                <!-- Submit buttons -->
+                <!-- Buttons -->
                 <div class="flex justify-between items-center mt-6">
                     <button type="button" @click="$inertia.visit('/adjustments')"
                         class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded">
