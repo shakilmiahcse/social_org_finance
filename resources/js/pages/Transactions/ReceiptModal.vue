@@ -12,7 +12,7 @@
                     <!-- Watermark -->
                     <div
                         class="absolute text-indigo-500/10 dark:text-indigo-400/10 -left-20 -top-20 text-9xl font-bold transform -rotate-30 select-none">
-                        RECEIPT
+                        {{ transaction.type === 'credit' ? 'RECEIPT' : 'PAYMENT' }}
                     </div>
 
                     <!-- Header -->
@@ -20,11 +20,18 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
-                                    <font-awesome-icon :icon="['fas', 'receipt']" class="text-2xl" />
+                                    <font-awesome-icon
+                                        :icon="['fas', transaction.type === 'credit' ? 'hand-holding-heart' : 'receipt']"
+                                        class="text-2xl" />
                                 </div>
                                 <div class="ml-4">
-                                    <h1 class="text-2xl font-bold">Transaction Receipt</h1>
-                                    <p class="text-indigo-100">Thank you for your support!</p>
+                                    <h1 class="text-2xl font-bold">{{ transaction.type === 'credit' ? 'Donation Receipt' :
+                                        'Payment Receipt' }}</h1>
+                                    <p class="text-indigo-100">
+                                        {{ transaction.type === 'credit'
+                                            ? 'Thank you for your generous support!'
+                                            : 'Thank you for your payment!' }}
+                                    </p>
                                 </div>
                             </div>
                             <div class="text-right">
@@ -53,8 +60,9 @@
                                 class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200 dark:border-gray-600">
                                 <div>
                                     <p class="text-gray-500 dark:text-gray-300 text-sm">Transaction Amount</p>
-                                    <p class="text-3xl font-bold text-gray-800 dark:text-white">{{
-                                        formatCurrency(transaction.amount) }}</p>
+                                    <p class="text-3xl font-bold text-gray-800 dark:text-white">
+                                        {{ formatCurrency(transaction.amount) }}
+                                    </p>
                                 </div>
                                 <div :class="statusColorClasses(transaction.status)"
                                     class="px-3 py-2 rounded-lg flex items-center">
@@ -69,26 +77,33 @@
                                     <span class="font-semibold text-gray-800 dark:text-white">{{
                                         formatDate(transaction.created_at) }}</span>
                                 </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Type</span>
-                                    <span class="font-semibold text-gray-800 dark:text-white capitalize">{{ transaction.type
-                                    }}</span>
-                                </div>
+
                                 <div class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Payment Method</span>
                                     <span class="font-semibold text-gray-800 dark:text-white capitalize">{{
                                         transaction.payment_method }}</span>
                                 </div>
-                                <div v-if="transaction.donor" class="flex justify-between">
+
+                                <!-- Show Donor for Credit, Raiser for Debit -->
+                                <div v-if="transaction.donor && transaction.type === 'credit'" class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Donor Name</span>
                                     <span class="font-semibold text-gray-800 dark:text-white">{{ transaction.donor.name
                                     }}</span>
                                 </div>
+
+                                <div v-if="transaction.type === 'debit'" class="flex justify-between">
+                                    <span class="text-gray-600 dark:text-gray-300">Raiser Name</span>
+                                    <span class="font-semibold text-gray-800 dark:text-white">
+                                        {{ transaction.donor?.name || 'Organization' }}
+                                    </span>
+                                </div>
+
                                 <div v-if="transaction.fund" class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Fund</span>
                                     <span class="font-semibold text-gray-800 dark:text-white">{{ transaction.fund.name
                                     }}</span>
                                 </div>
+
                                 <div v-if="transaction.purpose" class="flex justify-between">
                                     <span class="text-gray-600 dark:text-gray-300">Purpose</span>
                                     <span class="font-semibold text-gray-800 dark:text-white">{{ transaction.purpose
@@ -99,9 +114,13 @@
 
                         <!-- Footer -->
                         <div class="text-center">
-                            <p class="text-gray-400 dark:text-gray-400 text-sm mb-1">Thank you for supporting our mission!
+                            <p class="text-gray-400 dark:text-gray-400 text-sm mb-1">
+                                {{ transaction.type === 'credit'
+                                    ? 'Your contribution helps us continue our important work.'
+                                    : 'This payment helps us continue our important work.' }}
                             </p>
-                            <p class="text-gray-400 dark:text-gray-400 text-xs">This receipt serves as an official record.
+                            <p class="text-gray-400 dark:text-gray-400 text-xs">
+                                This receipt serves as an official record.
                             </p>
                         </div>
                     </div>
@@ -171,8 +190,7 @@ const statusColorClasses = (status: string) => {
     const statusMap: Record<string, string> = {
         completed: 'text-green-600 bg-green-100/50 dark:text-green-400 dark:bg-green-900/30',
         pending: 'text-yellow-600 bg-yellow-100/50 dark:text-yellow-400 dark:bg-yellow-900/30',
-        failed: 'text-red-600 bg-red-100/50 dark:text-red-400 dark:bg-red-900/30',
-        refunded: 'text-purple-600 bg-purple-100/50 dark:text-purple-400 dark:bg-purple-900/30'
+        canceled: 'text-red-600 bg-red-100/50 dark:text-red-400 dark:bg-red-900/30'
     };
     return statusMap[status.toLowerCase()] || 'text-gray-600 bg-gray-100/50 dark:text-gray-400 dark:bg-gray-900/30';
 };
@@ -181,8 +199,7 @@ const statusIcon = (status: string) => {
     const iconMap: Record<string, string[]> = {
         completed: ['fas', 'check-circle'],
         pending: ['fas', 'clock'],
-        failed: ['fas', 'times-circle'],
-        refunded: ['fas', 'exchange-alt']
+        canceled: ['fas', 'times-circle']
     };
     return iconMap[status.toLowerCase()] || ['fas', 'info-circle'];
 };
@@ -236,8 +253,10 @@ const shareReceipt = async () => {
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({
-                    title: 'Transaction Receipt',
-                    text: `I just ${props.transaction.type === 'donation' ? 'donated' : 'paid'} ${formatCurrency(props.transaction.amount)}`,
+                    title: props.transaction.type === 'credit' ? 'Donation Receipt' : 'Payment Receipt',
+                    text: props.transaction.type === 'credit'
+                        ? `I just donated ${formatCurrency(props.transaction.amount)}`
+                        : `Payment of ${formatCurrency(props.transaction.amount)}`,
                     files: [file]
                 });
             } else {
@@ -253,7 +272,7 @@ const shareReceipt = async () => {
 
 const downloadImageFromCanvas = (canvas: HTMLCanvasElement) => {
     const link = document.createElement('a');
-    link.download = `receipt-${props.transaction.txn_id}.png`;
+    link.download = `${props.transaction.type === 'credit' ? 'donation' : 'payment'}-receipt-${props.transaction.txn_id}.png`;
     link.href = canvas.toDataURL('image/png');
     document.body.appendChild(link);
     link.click();
@@ -318,7 +337,8 @@ defineExpose({
 });
 </script>
 
-<style>/* Ensure all colors use standard formats */
+<style>
+/* Ensure all colors use standard formats */
 .gradient-bg {
     background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
 }

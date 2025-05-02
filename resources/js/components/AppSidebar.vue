@@ -37,6 +37,14 @@ const mainNavItems: NavItem[] = [
                 title: 'Add Transaction',
                 href: '/transactions/create',
             },
+            {
+                title: 'Income',
+                href: '/incomes/create',
+            },
+            {
+                title: 'Expense',
+                href: '/expenses/create',
+            },
         ],
     },
     {

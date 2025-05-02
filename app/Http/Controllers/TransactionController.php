@@ -111,23 +111,82 @@ class TransactionController extends Controller
             'updated_by' => auth()->id(),
         ]);
 
-        // Alternative without relationships:
-        $transactionWithDetails = Transaction::query()
-            ->leftJoin('donors', 'transactions.donor_id', '=', 'donors.id')
-            ->leftJoin('funds', 'transactions.fund_id', '=', 'funds.id')
-            ->leftJoin('users as creator', 'transactions.created_by', '=', 'creator.id')
-            ->where('transactions.id', $transaction->id)
-            ->select(
-                'transactions.*',
-                'donors.name as donor_name',
-                'funds.name as fund_name',
-                'creator.name as created_by_name'
-            )
-            ->first();
+        return redirect()->route('transactions.index')->with([
+            'success' => 'Transaction created successfully!'
+        ]);
+    }
+
+
+
+    public function createIncome()
+    {
+        $donors = Donor::getDropdown();
+        $funds = Fund::getDropdown();
+
+        return Inertia::render('Transactions/IncomeCreate', [
+            'donors' => $donors,
+            'funds' => $funds
+        ]);
+    }
+
+    public function storeIncome(Request $request)
+    {
+        return $this->storeTransaction($request, 'credit');
+    }
+
+    public function createExpense()
+    {
+        $donors = Donor::getDropdown();
+        $funds = Fund::getDropdown();
+
+        return Inertia::render('Transactions/ExpenseCreate', [
+            'donors' => $donors,
+            'funds' => $funds
+        ]);
+    }
+
+    public function storeExpense(Request $request)
+    {
+        return $this->storeTransaction($request, 'debit');
+    }
+
+    private function storeTransaction(Request $request, string $type)
+    {
+        // Validate incoming request data (exclude txn_id)
+        $validated = $request->validate([
+            'donor_id' => 'nullable|exists:donors,id',
+            'fund_id' => 'required|exists:funds,id',
+            'amount' => 'required|numeric|min:0',
+            'purpose' => 'nullable|string|max:255',
+            'payment_method' => 'required|in:cash,bkash,card,bank',
+            'reference' => 'nullable|string|max:255',
+            'note' => 'nullable|string|max:255',
+            'status' => 'nullable|in:pending,completed,canceled',
+        ]);
+
+        // Get the last transaction id
+        $lastTransaction = Transaction::latest('id')->first();
+        $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
+        $txn_id = 'TXN' . time() . $nextId;
+
+        // Create a new transaction record
+        $transaction = Transaction::create([
+            'txn_id' => $txn_id,
+            'donor_id' => $validated['donor_id'],
+            'fund_id' => $validated['fund_id'],
+            'amount' => $validated['amount'],
+            'type' => $type, // Set from method parameter
+            'purpose' => $validated['purpose'],
+            'payment_method' => $validated['payment_method'],
+            'reference' => $validated['reference'],
+            'note' => $validated['note'],
+            'status' => $validated['status'] ?? 'pending',
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+        ]);
 
         return redirect()->route('transactions.index')->with([
-            'success' => 'Transaction created successfully!',
-            'newTransaction' => $transactionWithDetails // Use this instead of $transaction
+            'success' => 'Transaction created successfully!'
         ]);
     }
 
