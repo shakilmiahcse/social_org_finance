@@ -45,7 +45,7 @@ defineExpose({
                 class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all duration-300 w-full max-w-md">
                 <!-- Header with gradient background -->
                 <div class="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4">
-                    <h3 class="text-xl font-semibold leading-6 text-white">Donor Details</h3>
+                    <h3 class="text-xl font-semibold leading-6 text-white">Donor/Raiser Details</h3>
                 </div>
 
                 <!-- Content area -->

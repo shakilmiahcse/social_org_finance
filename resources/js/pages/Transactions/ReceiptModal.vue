@@ -179,11 +179,20 @@ const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(amount);
+const formatCurrency = (amount: string) => {
+    const numberAmount = parseFloat(amount.replace(/,/g, ''));
+
+    if (isNaN(numberAmount)) {
+        return 'Invalid amount';
+    }
+
+    const formatted = numberAmount.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    // Use the Unicode Taka symbol directly
+    return `BDT ${formatted}`;
 };
 
 const statusColorClasses = (status: string) => {

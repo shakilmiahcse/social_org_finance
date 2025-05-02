@@ -15,7 +15,7 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Donors',
+        title: 'Donors/Raisers',
         href: '/donors',
         icon: Users,
     },
@@ -34,7 +34,7 @@ const mainNavItems: NavItem[] = [
                 href: '/transactions',
             },
             {
-                title: 'Add Transaction',
+                title: 'Add',
                 href: '/transactions/create',
             },
             {

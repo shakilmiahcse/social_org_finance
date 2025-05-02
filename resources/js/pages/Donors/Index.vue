@@ -48,7 +48,7 @@ const filteredDonors = computed(() =>
 
 // Constants
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Donors', href: '/donors' },
+    { title: 'Donors/Raisers', href: '/donors' },
 ];
 
 const headers = [
@@ -93,7 +93,7 @@ const deleteDonor = (id: number) => {
         if (result.isConfirmed) {
             router.delete(`/donors/${id}`, {
                 onSuccess: () => {
-                    toast.success('The donor has been deleted.')
+                    toast.success('The donor/raiser has been deleted.')
                 }
             });
         }
@@ -158,7 +158,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Head title="Donor List" />
+    <Head title="Donor/Raiser List" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-4 space-y-4">
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">

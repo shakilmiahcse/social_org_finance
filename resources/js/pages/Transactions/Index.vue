@@ -45,15 +45,6 @@ const props = defineProps({
     },
 });
 
-// Watch for new transactions to show receipt
-watch(() => page.props.newTransaction, (newTransaction) => {
-    if (newTransaction) {
-        selectedTransaction.value = newTransaction;
-        receiptModal.value.open();
-        // Clear the flash so it doesn't show again on refresh
-        router.reload({ only: ['transactions'], preserveScroll: true });
-    }
-});
 
 const filteredTransactions = computed(() =>
     props.transactions.filter(t =>

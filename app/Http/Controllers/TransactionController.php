@@ -186,7 +186,8 @@ class TransactionController extends Controller
         ]);
 
         return redirect()->route('transactions.index')->with([
-            'success' => 'Transaction created successfully!'
+            'success' => 'Transaction created successfully!',
+            'click_recipt' => true
         ]);
     }
 
