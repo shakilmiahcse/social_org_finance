@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const sidebarNavItems: NavItem[] = [
-    { title: 'Profile', href: '/settings/profile' },
-    { title: 'Password', href: '/settings/password' },
-    { title: 'Appearance', href: '/settings/appearance' },
+    { title: 'Organization', href: '/settings/org' },
+    { title: 'Fund Type', href: '/settings/fund-type' },
 ];
 
 const page = usePage();
@@ -16,11 +16,11 @@ const currentPath = page.props.ziggy?.location ? new URL(page.props.ziggy.locati
 
 <template>
     <div class="p-4 space-y-4">
-        <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
-            <Heading title="Settings" description="Manage your profile and account settings." />
+            <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
+            <Heading title="Settings" description="Manage your organization settings." />
 
             <div class="flex flex-col lg:flex-row lg:space-x-10">
-                <!-- Sidebar -->
+                <!-- Sidebar Navigation -->
                 <aside class="w-full lg:w-56 flex-shrink-0">
                     <nav class="space-y-1">
                         <Link v-for="item in sidebarNavItems" :key="item.href" :href="item.href"
@@ -34,7 +34,7 @@ const currentPath = page.props.ziggy?.location ? new URL(page.props.ziggy.locati
                     </nav>
                 </aside>
 
-                <!-- Separator for mobile -->
+                <!-- Separator (mobile only) -->
                 <Separator class="my-6 block lg:hidden" />
 
                 <!-- Main Content -->

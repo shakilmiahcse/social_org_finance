@@ -5,6 +5,7 @@ use App\Http\Controllers\DonorController;
 use App\Http\Controllers\FundController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\CampaignAdjustmentController;
+use App\Http\Controllers\DashboardController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -12,10 +13,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
-
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('donors', DonorController::class);
     Route::resource('funds', FundController::class);
     Route::get('incomes/create', [TransactionController::class, 'createIncome'])->name('incomes.create');

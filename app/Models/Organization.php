@@ -12,7 +12,7 @@ class Organization extends Model
     protected $fillable = [
         'name', 'email', 'phone', 'address',
         'logo_path', 'website', 'timezone',
-        'currency', 'is_active', 'trial_ends_at'
+        'currency', 'is_active'
     ];
 
     protected $casts = [

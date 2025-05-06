@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Users, Banknote, ReceiptText, Sliders } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Users, Banknote, ReceiptText, Sliders, LineChart, Settings } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -27,14 +27,13 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Transactions',
         icon: ReceiptText,
-        // href: '/transactions',
         children: [
             {
                 title: 'All Transactions',
                 href: '/transactions',
             },
             {
-                title: 'Add',
+                title: 'Add Transaction',
                 href: '/transactions/create',
             },
             {
@@ -50,17 +49,46 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Adjustments',
         icon: Sliders,
-        // href: '/transactions',
         children: [
             {
                 title: 'All Adjustments',
                 href: '/adjustments',
             },
             {
-                title: 'Add Adjustments',
+                title: 'Add Adjustment',
                 href: '/adjustments/create',
             },
         ],
+    },
+    {
+        title: 'Reports',
+        icon: LineChart,
+        children: [
+            {
+                title: 'Financial',
+                href: '',
+            },
+            // Donor Reports
+            {
+                title: 'Donors',
+                href: '',
+            },
+            // Campaign Reports
+            {
+                title: 'Campaigns',
+                href: '',
+            },
+            // System Reports
+            {
+                title: 'System',
+                href: '',
+            },
+        ],
+    },
+    {
+        title: 'Settings',
+        icon: Settings,
+        href: '/settings/org',
     },
 ];
 
@@ -85,7 +113,7 @@ const footerNavItems: NavItem[] = [
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
                         <Link :href="route('dashboard')">
-                            <AppLogo />
+                        <AppLogo />
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
