@@ -38,7 +38,7 @@ const updateFundType = () => {
                     <label for="main_fund_id" class="block text-sm font-medium text-gray-700 mb-1">Main Fund</label>
                     <div class="relative">
                         <select id="main_fund_id" v-model="form.main_fund_id"
-                            class="block w-1/2 appearance-none rounded-md border border-gray-300 bg-white px-4 py-2 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            class="w-1/2 border rounded px-3 py-2">
                             <option disabled value="">Select Fund</option>
                             <option v-for="fund in funds" :key="fund.id" :value="fund.id">
                                 {{ fund.name }} ({{ fund.type }})

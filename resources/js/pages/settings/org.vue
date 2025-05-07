@@ -62,32 +62,32 @@ const submit = () => {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="grid gap-2">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" type="text" />
+                            <Input id="name" v-model="form.name" type="text" class="w-full border rounded px-3 py-2" />
                             <InputError :message="form.errors.name" />
                         </div>
 
                         <div class="grid gap-2">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" />
+                            <Input id="email" v-model="form.email" type="email" class="w-full border rounded px-3 py-2"/>
                             <InputError :message="form.errors.email" />
                         </div>
 
                         <div class="grid gap-2">
                             <Label for="phone">Phone</Label>
-                            <Input id="phone" v-model="form.phone" type="text" />
+                            <Input id="phone" v-model="form.phone" type="text" class="w-full border rounded px-3 py-2"/>
                             <InputError :message="form.errors.phone" />
                         </div>
 
                         <div class="grid gap-2">
                             <Label for="website">Website</Label>
-                            <Input id="website" v-model="form.website" type="url" />
+                            <Input id="website" v-model="form.website" type="url" class="w-full border rounded px-3 py-2"/>
                             <InputError :message="form.errors.website" />
                         </div>
 
                         <div class="grid gap-2">
                             <Label for="timezone">Timezone</Label>
                             <select id="timezone" v-model="form.timezone"
-                                class="block w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                class="w-full border rounded px-3 py-2">
                                 <option disabled value="">Select Timezone</option>
                                 <option v-for="zone in props.timezones" :key="zone" :value="zone">
                                     {{ zone }}
@@ -99,7 +99,7 @@ const submit = () => {
                         <div class="grid gap-2">
                             <Label for="currency">Currency</Label>
                             <select id="currency" v-model="form.currency"
-                                class="block w-full appearance-none rounded-md border border-gray-300 bg-white px-4 py-2 pr-10 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                class="w-full border rounded px-3 py-2">
                                 <option disabled value="">Select Currency</option>
                                 <option v-for="currency in props.currencies" :key="currency" :value="currency">
                                     {{ currency }}
@@ -111,14 +111,14 @@ const submit = () => {
                         <div class="md:col-span-2 grid gap-2">
                             <Label for="address">Address</Label>
                             <textarea id="address" v-model="form.address" rows="3"
-                                class="w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3"></textarea>
+                            class="w-full border rounded px-3 py-2"></textarea>
                             <InputError :message="form.errors.address" />
                         </div>
 
                         <div class="md:col-span-2 grid gap-2">
                             <Label for="logo">Logo</Label>
                             <input id="logo" ref="fileInput" type="file" @change="handleFileChange" accept="image/*"
-                                class="w-1/2 rounded-md border border-gray-300 shadow-sm p-1" />
+                            class="w-1/2 border rounded px-3 py-2" />
                             <InputError :message="form.errors.logo_path" />
 
                             <div class="mt-2 flex items-center">
