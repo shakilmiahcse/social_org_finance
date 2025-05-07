@@ -30,8 +30,28 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
+
+        $user = $request->user(); // Logged-in user
+
+        // Load the organization relation (if not already eager-loaded)
+        $organization = $user->organization()->first();
+
+        if ($organization) {
+            // Store each organization attribute individually in the session
+            session([
+                'organization_id' => $organization->id,
+                'organization_name' => $organization->name,
+                'organization_email' => $organization->email,
+                'organization_phone' => $organization->phone,
+                'organization_address' => $organization->address,
+                'organization_logo_path' => $organization->logo_path,
+                'organization_website' => $organization->website,
+                'organization_timezone' => $organization->timezone,
+                'organization_currency' => $organization->currency,
+                'organization_is_active' => $organization->is_active,
+            ]);
+        }
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

@@ -111,14 +111,14 @@ const submit = () => {
                         <div class="md:col-span-2 grid gap-2">
                             <Label for="address">Address</Label>
                             <textarea id="address" v-model="form.address" rows="3"
-                                class="w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                                class="w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3"></textarea>
                             <InputError :message="form.errors.address" />
                         </div>
 
                         <div class="md:col-span-2 grid gap-2">
                             <Label for="logo">Logo</Label>
                             <input id="logo" ref="fileInput" type="file" @change="handleFileChange" accept="image/*"
-                                class="w-1/2 rounded-md border border-gray-300 shadow-sm" />
+                                class="w-1/2 rounded-md border border-gray-300 shadow-sm p-1" />
                             <InputError :message="form.errors.logo_path" />
 
                             <div class="mt-2 flex items-center">

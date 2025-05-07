@@ -33,7 +33,8 @@ class OrgSettingController extends Controller
             'currency' => 'nullable|string|max:10',
         ]);
 
-        $organization = Organization::firstOrFail();
+        $user = $request->user();
+        $organization = $user->organization()->first();
         $data = $request->except('logo_path');
 
         if ($request->hasFile('logo_path')) {
@@ -50,6 +51,21 @@ class OrgSettingController extends Controller
 
         $organization->update($data);
 
+        // 🔁 Update session with new organization data
+        session([
+            'organization_id' => $organization->id,
+            'organization_name' => $organization->name,
+            'organization_email' => $organization->email,
+            'organization_phone' => $organization->phone,
+            'organization_address' => $organization->address,
+            'organization_logo_path' => $organization->logo_path,
+            'organization_website' => $organization->website,
+            'organization_timezone' => $organization->timezone,
+            'organization_currency' => $organization->currency,
+            'organization_is_active' => $organization->is_active,
+        ]);
+
         return back()->with('success', 'Organization settings updated successfully');
     }
+
 }
