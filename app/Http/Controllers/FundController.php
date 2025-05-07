@@ -16,8 +16,11 @@ class FundController extends Controller
      */
     public function index()
     {
+        $organization_id = request()->session()->get("organization_id");
+
         $funds = Fund::with(['createdBy', 'updatedBy'])
             ->leftJoin('transactions as t', 'funds.id', '=', 't.fund_id')
+            ->where('funds.organization_id', $organization_id)
             ->select(
                 'funds.id',
                 'funds.name',
@@ -80,8 +83,11 @@ class FundController extends Controller
             'type' => 'required|in:main,campaign',
         ]);
 
+        $organization_id = $request->session()->get("organization_id");
+
         try {
             $fund = Fund::create([
+                'organization_id' => $organization_id,
                 'name' => $validated['name'],
                 'description' => $validated['description'],
                 'type' => $validated['type'],

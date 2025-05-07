@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Donor extends Model
 {
     protected $fillable = [
-        'name', 'email', 'phone', 'address', 'created_by', 'updated_by'
+        'name', 'email', 'phone', 'address', 'created_by', 'updated_by', 'organization_id'
     ];
 
     public function createdBy()
@@ -22,7 +22,9 @@ class Donor extends Model
 
     public static function getDropdown()
     {
-        return self::pluck('name', 'id')->map(function ($name, $id) {
+        $organization_id = request()->session()->get("organization_id");
+
+        return self::pluck('name', 'id')->where('organization_id', $organization_id)->map(function ($name, $id) {
             return ['id' => $id, 'name' => $name];
         });
     }

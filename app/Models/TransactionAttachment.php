@@ -8,7 +8,7 @@ class TransactionAttachment extends Model
 {
 protected $fillable = [
     'transaction_id', 'file_path', 'original_name',
-    'mime_type', 'file_type', 'uploaded_by'
+    'mime_type', 'file_type', 'uploaded_by', 'organization_id'
 ];
 
 public function transaction()

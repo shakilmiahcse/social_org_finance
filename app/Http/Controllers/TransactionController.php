@@ -18,9 +18,12 @@ class TransactionController extends Controller
      */
     public function index()
     {
+        $organization_id = request()->session()->get("organization_id");
+
         $transactions = Transaction::with(['createdBy', 'updatedBy'])
             ->leftJoin('donors', 'transactions.donor_id', '=', 'donors.id')
             ->leftJoin('funds', 'transactions.fund_id', '=', 'funds.id')
+            ->where('transactions.organization_id', $organization_id)
             ->select(
                 'transactions.*',
                 'donors.name as donor_name',
@@ -90,6 +93,8 @@ class TransactionController extends Controller
             'status' => 'nullable|in:pending,completed,canceled',
         ]);
 
+        $organization_id = $request->session()->get("organization_id");
+
         // Get the last transaction id
         $lastTransaction = Transaction::latest('id')->first();
         $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
@@ -97,6 +102,7 @@ class TransactionController extends Controller
 
         // Create a new transaction record
         $transaction = Transaction::create([
+            'organization_id' => $organization_id,
             'txn_id' => $txn_id,
             'donor_id' => $validated['donor_id'],
             'fund_id' => $validated['fund_id'],
@@ -164,6 +170,8 @@ class TransactionController extends Controller
             'status' => 'nullable|in:pending,completed,canceled',
         ]);
 
+        $organization_id = $request->session()->get("organization_id");
+
         // Get the last transaction id
         $lastTransaction = Transaction::latest('id')->first();
         $nextId = $lastTransaction ? $lastTransaction->id + 1 : 1;
@@ -171,6 +179,7 @@ class TransactionController extends Controller
 
         // Create a new transaction record
         $transaction = Transaction::create([
+            'organization_id' => $organization_id,
             'txn_id' => $txn_id,
             'donor_id' => $validated['donor_id'],
             'fund_id' => $validated['fund_id'],

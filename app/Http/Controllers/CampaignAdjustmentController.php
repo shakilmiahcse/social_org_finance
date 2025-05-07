@@ -18,9 +18,12 @@ class CampaignAdjustmentController extends Controller
      */
     public function index()
     {
+        $organization_id = request()->session()->get("organization_id");
+
         $adjustments = CampaignAdjustment::with(['createdBy', 'updatedBy'])
             ->leftJoin('funds as main', 'campaign_adjustments.main_fund_id', '=', 'main.id')
             ->leftJoin('funds as campaign', 'campaign_adjustments.campaign_fund_id', '=', 'campaign.id')
+            ->where('campaign_adjustments.organization_id', $organization_id)
             ->select(
                 'campaign_adjustments.*',
                 'campaign.name as campaign_fund_name',
@@ -56,10 +59,13 @@ class CampaignAdjustmentController extends Controller
      */
     public function create()
     {
+        $organization_id = request()->session()->get("organization_id");
+
         $mainFunds = Fund::getMainDropdown();
         $campaignFunds = Fund::leftJoin('transactions as t', 'funds.id', '=', 't.fund_id')
         ->whereNull('funds.closed_at')
         ->where('funds.type', 'campaign')
+        ->where('funds.organization_id', $organization_id)
         ->select(
             'funds.id',
             'funds.name',
@@ -98,6 +104,8 @@ class CampaignAdjustmentController extends Controller
             'note' => 'nullable|string',
         ]);
 
+        $organization_id = $request->session()->get("organization_id");
+
         try {
             DB::beginTransaction();
 
@@ -105,6 +113,7 @@ class CampaignAdjustmentController extends Controller
 
             // Create adjustment record
             $adjustment = CampaignAdjustment::create([
+                'organization_id' => $organization_id,
                 'amount' => $amount,
                 'type' => $validated['type'],
                 'main_fund_id' => $validated['main_fund_id'],
@@ -127,6 +136,7 @@ class CampaignAdjustmentController extends Controller
             if ($adjustment->type === 'to_campaign') {
                 // Debit main fund
                 Transaction::create([
+                    'organization_id' => $organization_id,
                     'txn_id' => $txn_id1,
                     'fund_id' => $mainFund->id,
                     'adjustment_id' => $adjustment->id,
@@ -142,6 +152,7 @@ class CampaignAdjustmentController extends Controller
 
                 // Credit campaign fund
                 Transaction::create([
+                    'organization_id' => $organization_id,
                     'txn_id' => $txn_id2,
                     'fund_id' => $campaignFund->id,
                     'adjustment_id' => $adjustment->id,
@@ -159,6 +170,7 @@ class CampaignAdjustmentController extends Controller
             if ($adjustment->type === 'to_main') {
                 // Debit campaign fund
                 Transaction::create([
+                    'organization_id' => $organization_id,
                     'txn_id' => $txn_id1,
                     'fund_id' => $campaignFund->id,
                     'adjustment_id' => $adjustment->id,
@@ -174,6 +186,7 @@ class CampaignAdjustmentController extends Controller
 
                 // Credit main fund
                 Transaction::create([
+                    'organization_id' => $organization_id,
                     'txn_id' => $txn_id2,
                     'fund_id' => $mainFund->id,
                     'adjustment_id' => $adjustment->id,

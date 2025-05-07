@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class CampaignAdjustment extends Model
 {
     protected $fillable = [
-        'campaign_fund_id', 'main_fund_id', 'amount', 'type', 'note', 'created_by', 'updated_by'
+        'campaign_fund_id', 'main_fund_id', 'amount', 'type', 'note', 'created_by', 'updated_by', 'organization_id'
     ];
 
     public function fund()

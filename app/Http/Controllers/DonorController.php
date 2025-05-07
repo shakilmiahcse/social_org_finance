@@ -16,7 +16,9 @@ class DonorController extends Controller
 
     public function index()
     {
-        $donors = Donor::with(['createdBy', 'updatedBy'])->orderBy('created_at', 'desc')->get()->map(function ($donor) {
+        $organization_id = request()->session()->get("organization_id");
+
+        $donors = Donor::with(['createdBy', 'updatedBy'])->where('organization_id', $organization_id)->orderBy('created_at', 'desc')->get()->map(function ($donor) {
             return [
                 'id'          => $donor->id,
                 'name'        => $donor->name,
@@ -55,6 +57,8 @@ class DonorController extends Controller
             'phone' => 'nullable|string|max:255',
         ]);
 
+        $organization_id = $request->session()->get("organization_id");
+        $validated['organization_id'] = $organization_id;
         $validated['created_by'] = auth()->id();
         Donor::create($validated);
 

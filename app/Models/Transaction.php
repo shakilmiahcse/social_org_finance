@@ -9,7 +9,7 @@ class Transaction extends Model
     protected $fillable = [
         'txn_id', 'adjustment_id', 'donor_id', 'fund_id', 'amount', 'type', 'purpose',
         'payment_method', 'reference', 'note', 'status',
-        'created_by', 'updated_by'
+        'created_by', 'updated_by', 'organization_id'
     ];
 
     public function createdBy()
