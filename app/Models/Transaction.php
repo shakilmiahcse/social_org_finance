@@ -27,4 +27,9 @@ class Transaction extends Model
         return $this->hasMany(TransactionAttachment::class);
     }
 
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
 }
