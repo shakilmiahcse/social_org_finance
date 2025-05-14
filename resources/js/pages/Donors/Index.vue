@@ -32,6 +32,7 @@ const props = defineProps({
             name: string;
             email: string;
             phone: string;
+            blood_group: string;
             createdBy?: { name: string };
             created_at: string;
         }>,
@@ -55,6 +56,7 @@ const headers = [
     { text: 'Name', value: 'name', sortable: true, class: 'font-bold' },
     { text: 'Email', value: 'email', sortable: true },
     { text: 'Phone', value: 'phone', sortable: true },
+    { text: 'Blood Group', value: 'blood_group', sortable: true },
     { text: 'Created By', value: 'createdBy.name', sortable: true },
     { text: 'Created At', value: 'created_at', sortable: true },
     { text: 'Actions', value: 'actions', sortable: false, width: 120 },
@@ -131,6 +133,7 @@ const exportToExcel = () => {
         { header: 'Name', key: 'name' },
         { header: 'Email', key: 'email' },
         { header: 'Phone', key: 'phone' },
+        { header: 'Blood Group', key: 'blood_group' },
     ];
     worksheet.addRows(props.donors);
     workbook.xlsx.writeBuffer().then((buffer) => {
@@ -141,8 +144,8 @@ const exportToExcel = () => {
 const exportToPDF = () => {
     const doc = new jsPDF();
     autoTable(doc, {
-        head: [['Name', 'Email', 'Phone']],
-        body: props.donors.map(d => [d.name, d.email, d.phone]),
+        head: [['Name', 'Email', 'Phone', 'Blood Group']],
+        body: props.donors.map(d => [d.name, d.email, d.phone, d.blood_group]),
     });
     doc.save('donors.pdf');
 };
@@ -195,10 +198,16 @@ onUnmounted(() => {
                     <EasyDataTable :headers="headers" :items="filteredDonors" header-text-direction="left"
                         rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination
                         class="custom-table min-w-[700px]">
-                        <template #item-actions="{ id }">
+                        <!-- Blood Group column -->
+                        <template #item-blood_group="{ blood_group }">
+                            <span v-if="blood_group" class="px-2 py-1 rounded-full text-white text-xs font-semibold bg-red-500">
+                                {{ blood_group }}
+                            </span>
+                        </template>
+                        <template #item-actions="{ id, blood_group }">
                             <div class="relative inline-block text-left">
                                 <button :data-dropdown-button="id"
-                                    class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded"
                                     @click.stop="toggleDropdown(id)">
                                     Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                                 </button>

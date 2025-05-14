@@ -18,6 +18,7 @@ const form = ref({
     name: '',
     email: '',
     phone: '',
+    blood_group: '',
     address: '',
 });
 
@@ -30,6 +31,7 @@ watch(() => props.donor, (newDonor) => {
             name: newDonor.name,
             email: newDonor.email,
             phone: newDonor.phone,
+            blood_group: newDonor.blood_group,
             address: newDonor.address,
         };
     }
@@ -93,6 +95,23 @@ defineExpose({
                             <label for="edit-phone" class="block text-sm font-medium text-gray-700">Phone</label>
                             <input v-model="form.phone" type="tel" id="edit-phone"
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div class="mb-4">
+                            <label for="edit-blood-group" class="block text-sm font-medium text-gray-700">
+                                Blood Group
+                            </label>
+                            <select v-model="form.blood_group" id="edit-blood-group"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Select Blood Group</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
                         </div>
                         <div class="mb-4">
                             <label for="address" class="block text-sm font-medium text-gray-700">Address</label>

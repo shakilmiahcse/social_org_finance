@@ -187,10 +187,22 @@ onUnmounted(() => {
                     <EasyDataTable :headers="headers" :items="filteredAdjustments" header-text-direction="left"
                         rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination
                         class="custom-table min-w-[700px]">
+                        <template #item-type="{ type }">
+                            <span
+                                :class="[
+                                    'px-2 py-1 rounded-full text-xs font-semibold capitalize',
+                                    type === 'to_campaign' ? 'bg-green-400 text-white' :
+                                        type === 'to_main' ? 'bg-red-400 text-white' :
+                                            'bg-gray-200 text-gray-600'
+                                ]"
+                            >
+                                {{ (type || 'N/A').replace(/_/g, ' ') }}
+                            </span>
+                        </template>
                         <template #item-actions="{ id }">
                             <div class="relative inline-block text-left">
                                 <button :data-dropdown-button="id"
-                                    class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded"
                                     @click.stop="toggleDropdown(id)">
                                     Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                                 </button>

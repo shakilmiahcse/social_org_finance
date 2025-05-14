@@ -71,6 +71,15 @@ defineExpose({
                             <p class="text-sm font-medium text-gray-500">Phone</p>
                             <p class="mt-1 text-sm text-gray-900">{{ donor.phone || 'Not provided' }}</p>
                         </div>
+                        <div v-if="donor.blood_group">
+                            <p class="text-sm font-medium text-gray-500">Blood Group</p>
+                            <p class="mt-1 text-sm">
+                                <span
+                                    class="inline-block px-3 py-1 rounded-full text-sm font-semibold text-white bg-red-500">
+                                    {{ donor.blood_group }}
+                                </span>
+                            </p>
+                        </div>
                         <div v-if="donor.address">
                             <p class="text-sm font-medium text-gray-500">Address</p>
                             <p class="mt-1 text-sm text-gray-900">{{ donor.address }}</p>

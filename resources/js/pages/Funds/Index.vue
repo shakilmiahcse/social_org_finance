@@ -197,10 +197,21 @@ onUnmounted(() => {
                 <div class="overflow-auto">
                     <EasyDataTable :headers="headers" :items="filteredFunds" header-text-direction="left" rows-per-page="20"
                         :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table min-w-[700px]">
+                        <template #item-type="{ type }">
+                            <span
+                                :class="[
+                                    'px-2 py-1 rounded-full text-xs font-semibold capitalize',
+                                    type === 'main' ? 'bg-blue-700 text-white' :
+                                        type === 'campaign' ? 'bg-blue-200 text-blue-800' :
+                                            'bg-gray-200 text-gray-600'
+                                ]">
+                                {{ type || 'N/A' }}
+                            </span>
+                        </template>
                         <template #item-actions="{ id }">
                             <div class="relative inline-block text-left">
                                 <button :data-dropdown-button="id"
-                                    class="bg-blue-500 hover:bg-blue-700 px-2 text-white rounded"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded"
                                     @click.stop="toggleDropdown(id)">
                                     Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                                 </button>

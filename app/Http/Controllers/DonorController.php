@@ -24,6 +24,7 @@ class DonorController extends Controller
                 'name'        => $donor->name,
                 'email'       => $donor->email,
                 'phone'       => $donor->phone,
+                'blood_group' => $donor->blood_group,
                 'address'     => $donor->address,
                 'createdBy'   => $donor->createdBy ? ['name' => $donor->createdBy->name] : null,
                 'updatedBy'   => $donor->updatedBy ? ['name' => $donor->updatedBy->name] : null,
@@ -54,7 +55,8 @@ class DonorController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255|unique:donors,email',
             'phone' => 'nullable|string|max:20',
-            'phone' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|string|max:5',
         ]);
 
         $organization_id = $request->session()->get("organization_id");
@@ -94,7 +96,8 @@ class DonorController extends Controller
                 'max:255',
             ],
             'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:255'
+            'address' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|string|max:5'
         ]);
 
         $validated['updated_by'] = auth()->id();
