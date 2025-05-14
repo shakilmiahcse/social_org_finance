@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\User;
+use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -97,6 +99,51 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($userData['password']),
                 'organization_id' => $organization->id,
             ]);
+
+            // Create default permissions for this organization
+            $permissions = [
+                'funds.create', 'funds.view', 'funds.edit', 'funds.delete',
+                'donors.create', 'donors.view', 'donors.edit', 'donors.delete',
+                'transactions.create', 'transactions.view', 'transactions.edit', 'transactions.delete',
+                'adjustments.create', 'adjustments.view', 'adjustments.edit', 'adjustments.delete',
+            ];
+
+            foreach ($permissions as $permission) {
+                Permission::create([
+                    'name' => $permission,
+                    'organization_id' => $organization->id
+                ]);
+            }
+
+            // Create default roles for this organization
+            $adminRole = Role::create([
+                'name' => 'admin',
+                'organization_id' => $organization->id
+            ]);
+
+            $managerRole = Role::create([
+                'name' => 'manager',
+                'organization_id' => $organization->id
+            ]);
+
+            $userRole = Role::create([
+                'name' => 'user',
+                'organization_id' => $organization->id
+            ]);
+
+            // Assign permissions to roles
+            $adminRole->givePermissionTo(Permission::where('organization_id', $organization->id)->get());
+
+            $managerRole->givePermissionTo(
+                Permission::where('organization_id', $organization->id)
+                    ->whereIn('name', ['funds.view', 'donors.view', 'transactions.view', 'adjustments.view'])
+                    ->get()
+            );
+
+            // Assign admin role to the registering user
+            $user->assignRole($adminRole);
+            $adminRole = Role::firstOrCreate(['name' => 'admin']);
+            $user->assignRole($adminRole);
 
             DB::commit();
 
