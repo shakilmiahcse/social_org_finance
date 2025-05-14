@@ -6,6 +6,7 @@ use App\Http\Controllers\FundController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\CampaignAdjustmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RolePermissionController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -22,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('expenses', [TransactionController::class, 'storeExpense'])->name('expenses.store');
     Route::resource('transactions', TransactionController::class);
     Route::resource('adjustments', CampaignAdjustmentController::class);
+    Route::resource('roles-permissions', RolePermissionController::class);
 });
 
 require __DIR__.'/settings.php';

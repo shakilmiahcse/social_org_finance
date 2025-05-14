@@ -17,11 +17,9 @@ class Role extends SpatieRole
 
     protected static function booted()
     {
-        $organization_id = request()->session()->get("organization_id");
-
         static::addGlobalScope('organization', function (Builder $builder) {
-            if (auth()->check() && $organization_id) {
-                $builder->where('organization_id', $organization_id);
+            if (auth()->check() && auth()->user()->organization_id) {
+                $builder->where('organization_id', auth()->user()->organization_id);
             }
         });
     }
