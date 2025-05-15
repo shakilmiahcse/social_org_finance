@@ -55,8 +55,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,NULL,id,organization_id,'.$request->session()->get('organization_id'),
             'password' => 'required|string|min:8|confirmed',
-            'roles' => 'array',
-            'roles.*' => 'exists:roles,name,organization_id,'.$request->session()->get('organization_id')
+            'role' => 'required|exists:roles,name,organization_id,'.$request->session()->get('organization_id')
         ]);
 
         DB::transaction(function () use ($request) {
@@ -68,8 +67,8 @@ class UserController extends Controller
                 'created_by' => auth()->id()
             ]);
 
-            if ($request->roles) {
-                $user->syncRoles($request->roles);
+            if ($request->role) {
+                $user->assignRole($request->role);
             }
         });
 
@@ -82,8 +81,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id.',id,organization_id,'.$request->session()->get('organization_id'),
             'password' => 'nullable|string|min:8|confirmed',
-            'roles' => 'array',
-            'roles.*' => 'exists:roles,name,organization_id,'.$request->session()->get('organization_id')
+            'role' => 'required|exists:roles,name,organization_id,'.$request->session()->get('organization_id')
         ]);
 
         DB::transaction(function () use ($request, $user) {
@@ -99,7 +97,9 @@ class UserController extends Controller
 
             $user->update($updateData);
 
-            $user->syncRoles($request->roles);
+            if ($request->role) {
+                $user->syncRoles([$request->role]);
+            }
         });
 
         return redirect()->back()->with('success', 'User updated successfully.');

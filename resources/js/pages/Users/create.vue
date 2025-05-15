@@ -13,10 +13,6 @@ const props = defineProps({
             name: string;
         }>,
         required: true
-    },
-    availableRoles: {
-        type: Array,
-        required: true
     }
 });
 
@@ -27,7 +23,7 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
-    roles: [] as string[]
+    role: '' // Changed to single role
 });
 
 const submit = () => {
@@ -111,17 +107,17 @@ defineExpose({
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Roles
+                            <label for="role" class="block text-sm font-medium text-gray-700">
+                                Role <span class="text-red-500">*</span>
                             </label>
-                            <div class="space-y-2">
-                                <label v-for="role in roles" :key="role.id" class="flex items-center gap-2">
-                                    <input type="checkbox" v-model="form.roles" :value="role.name"
-                                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                    <span class="text-sm">{{ role.name }}</span>
-                                </label>
-                            </div>
-                            <span class="text-xs text-red-500" v-if="form.errors.roles">{{ form.errors.roles }}</span>
+                            <select v-model="form.role" id="role" required
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Select a role</option>
+                                <option v-for="role in roles" :key="role.id" :value="role.name">
+                                    {{ role.name }}
+                                </option>
+                            </select>
+                            <span class="text-xs text-red-500" v-if="form.errors.role">{{ form.errors.role }}</span>
                         </div>
                     </form>
                 </div>
@@ -146,4 +142,5 @@ defineExpose({
                 </div>
             </div>
         </div>
-</div></template>
+    </div>
+</template>
