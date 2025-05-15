@@ -32,4 +32,14 @@ class Transaction extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    public function donor()
+    {
+        return $this->belongsTo(Donor::class, 'donor_id');
+    }
+
+    public function fund()
+    {
+        return $this->belongsTo(Fund::class, 'fund_id');
+    }
+
 }

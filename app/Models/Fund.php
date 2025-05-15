@@ -49,4 +49,9 @@ class Fund extends Model
         })
         ->values();
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }
