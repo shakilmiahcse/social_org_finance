@@ -20,7 +20,7 @@ const mainNavItems: NavItem[] = [
         children: [
             {
                 title: 'Users',
-                href: '',
+                href: 'users',
             },
             {
                 title: 'Roles',

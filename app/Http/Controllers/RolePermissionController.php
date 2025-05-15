@@ -93,11 +93,23 @@ class RolePermissionController extends Controller
     {
         // Prevent deletion of admin role
         if ($role->name === 'admin') {
-            return redirect()->back()->with('error', 'Admin role cannot be deleted.');
+            return redirect()->back()
+                ->with('error', 'Admin role cannot be deleted.');
         }
 
-        $role->delete();
+        // Check if any users are assigned to this role
+        if ($role->users()->exists()) {
+            return redirect()->back()
+                ->with('error', 'Cannot delete role because it is assigned to users.');
+        }
 
-        return redirect()->back()->with('success', 'Role deleted successfully.');
+        try {
+            $role->delete();
+            return redirect()->back()
+                ->with('success', 'Role deleted successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to delete role: ' . $e->getMessage());
+        }
     }
 }

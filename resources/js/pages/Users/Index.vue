@@ -7,68 +7,70 @@ import 'vue3-easy-data-table/dist/style.css';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
-import AddRoleModal from './create.vue';
-import EditRoleModal from './edit.vue';
+import AddUserModal from './create.vue';
+import EditUserModal from './edit.vue';
 
-// Refs
 const toast = useToast();
 const searchTerm = ref('');
-const addRoleModal = ref();
-const editRoleModal = ref();
-const selectedRole = ref(null);
+const addUserModal = ref();
+const editUserModal = ref();
+const selectedUser = ref(null);
 const $refs = ref<Record<string, HTMLElement>>({});
 
-// Props
 const props = defineProps({
-    roles: {
+    users: {
         type: Array as () => Array<{
             id: number;
             name: string;
-            permissions: string[];
+            email: string;
+            roles: string[];
             created_at: string;
         }>,
         required: true
     },
-    permissions: {
-        type: Object,
+    roles: {
+        type: Array as () => Array<{
+            id: number;
+            name: string;
+        }>,
         required: true
     },
-    availablePermissions: {
+    availableRoles: {
         type: Array,
         required: true
     }
 });
 
-// Computed
-const filteredRoles = computed(() =>
-    props.roles.filter(role =>
-        role.name.toLowerCase().includes(searchTerm.value.toLowerCase())
+const filteredUsers = computed(() =>
+    props.users.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.value.toLowerCase())
     )
 );
 
-// Constants
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Role & Permission Management', href: '/roles-permissions' },
+    { title: 'User Management', href: '/users' },
 ];
 
 const headers = [
-    { text: 'Role Name', value: 'name', sortable: true, class: 'font-bold' },
+    { text: 'Name', value: 'name', sortable: true, class: 'font-bold' },
+    { text: 'Email', value: 'email', sortable: true },
+    { text: 'Roles', value: 'roles', sortable: false },
     { text: 'Created At', value: 'created_at', sortable: true },
     { text: 'Actions', value: 'actions', sortable: false, width: 120 },
 ];
 
-// Methods
-const addRole = () => addRoleModal.value.open();
+const addUser = () => addUserModal.value.open();
 
-const editRole = (role) => {
-    selectedRole.value = role;
-    editRoleModal.value.open();
+const editUser = (user) => {
+    selectedUser.value = user;
+    editUserModal.value.open();
 };
 
-const deleteRole = (id, name) => {
+const deleteUser = (id: number, name: string) => {
     Swal.fire({
         title: 'Are you sure?',
-        text: `You are about to delete the role "${name}". This action cannot be undone.`,
+        text: `You are about to delete the user "${name}". This action cannot be undone.`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
@@ -76,74 +78,61 @@ const deleteRole = (id, name) => {
         confirmButtonText: 'Yes, delete it!',
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(`/roles-permissions/${id}`, {
+            router.delete(`/users/${id}`, {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success('The role has been deleted.');
+                    toast.success('User deleted successfully.');
                 },
-                onError: (errors) => {
-                    Swal.fire({
-                        title: 'Error!',
-                        text: errors.message || 'Failed to delete role',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
+                onError: () => {
+                    toast.error('Failed to delete user.');
                 }
             });
         }
     });
 };
 
-const formatPermissions = (permissions) => {
-    return permissions.map(p => {
-        const parts = p.split('.');
-        return `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${parts[0]}.${parts[1]}</span>`;
-    }).join(' ');
+const formatRoles = (roles) => {
+    return roles.map(role =>
+        `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${role}</span>`
+    ).join(' ');
 };
 </script>
 
 <template>
-    <Head title="Role & Permission Management" />
+    <Head title="User Management" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-4 space-y-4">
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
-                <!-- Header with Add button -->
                 <div class="flex justify-between items-center">
-                    <h1 class="text-2xl font-bold">Role Management</h1>
-                    <button @click="addRole"
+                    <h1 class="text-2xl font-bold">User Management</h1>
+                    <button @click="addUser"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
                         <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
                         Add
                     </button>
                 </div>
 
-                <!-- Search bar -->
                 <div class="flex justify-end">
-                    <input v-model="searchTerm" type="text" placeholder="Search roles..."
+                    <input v-model="searchTerm" type="text" placeholder="Search users..."
                         class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                 </div>
 
-                <!-- Roles table -->
                 <div class="overflow-auto">
-                    <EasyDataTable :headers="headers" :items="filteredRoles" header-text-direction="left" rows-per-page="20"
+                    <EasyDataTable :headers="headers" :items="filteredUsers" header-text-direction="left" rows-per-page="20"
                         :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table min-w-[700px]">
+                        <template #item-roles="{ roles }">
+                            <div v-html="formatRoles(roles)" class="flex flex-wrap gap-1"></div>
+                        </template>
                         <template #item-actions="{ id, name }">
-                            <div v-if="name !== 'admin'" class="flex items-center space-x-3 my-1">
-                                <!-- Edit Icon Button -->
-                                <button
-                                    @click.stop="editRole(filteredRoles.find(r => r.id === id))"
+                            <div class="flex items-center space-x-3 my-1">
+                                <button @click.stop="editUser(filteredUsers.find(u => u.id === id))"
                                     class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800"
-                                    title="Edit"
-                                >
+                                    title="Edit">
                                     <font-awesome-icon :icon="['fas', 'pen-to-square']" />
                                 </button>
-
-                                <!-- Delete Icon Button -->
-                                <button
-                                    @click.stop="deleteRole(id, name)"
+                                <button @click.stop="deleteUser(id, name)"
                                     class="w-9 h-9 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-800"
-                                    title="Delete"
-                                >
+                                    title="Delete">
                                     <font-awesome-icon :icon="['fas', 'trash']" />
                                 </button>
                             </div>
@@ -153,9 +142,8 @@ const formatPermissions = (permissions) => {
             </div>
         </div>
 
-        <AddRoleModal ref="addRoleModal" :permissions="permissions" :available-permissions="availablePermissions" />
-        <EditRoleModal ref="editRoleModal" :role="selectedRole" :permissions="permissions"
-            :available-permissions="availablePermissions" />
+        <AddUserModal ref="addUserModal" :roles="roles" :available-roles="availableRoles" />
+        <EditUserModal ref="editUserModal" :user="selectedUser" :roles="roles" :available-roles="availableRoles" />
     </AppLayout>
 </template>
 
