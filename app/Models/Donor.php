@@ -24,8 +24,11 @@ class Donor extends Model
     {
         $organization_id = request()->session()->get("organization_id");
 
-        return self::pluck('name', 'id')->where('organization_id', $organization_id)->map(function ($name, $id) {
+        return self::where('organization_id', $organization_id)
+        ->pluck('name', 'id')
+        ->map(function ($name, $id) {
             return ['id' => $id, 'name' => $name];
-        });
+        })
+        ->values();
     }
 }

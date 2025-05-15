@@ -42,8 +42,11 @@ class Fund extends Model
     {
         $organization_id = request()->session()->get("organization_id");
 
-        return self::where('type', 'main')->where('organization_id', $organization_id)->pluck('name', 'id')->map(function ($name, $id) {
+        return self::where('organization_id', $organization_id)
+        ->pluck('name', 'id')
+        ->map(function ($name, $id) {
             return ['id' => $id, 'name' => $name];
-        });
+        })
+        ->values();
     }
 }

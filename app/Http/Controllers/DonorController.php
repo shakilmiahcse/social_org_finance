@@ -62,9 +62,12 @@ class DonorController extends Controller
         $organization_id = $request->session()->get("organization_id");
         $validated['organization_id'] = $organization_id;
         $validated['created_by'] = auth()->id();
-        Donor::create($validated);
+        $donor = Donor::create($validated);
 
-        return redirect()->back()->with('success', 'Donor created successfully');
+        return redirect()->back()->with([
+            'success' => 'Donor created successfully',
+            'donor' => $donor
+        ]);
     }
 
     /**

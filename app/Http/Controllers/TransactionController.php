@@ -246,6 +246,18 @@ class TransactionController extends Controller
      */
     public function destroy(Transaction $transaction)
     {
-        //
+        // Check if the transaction exists
+        if (!$transaction) {
+            return redirect()->back()->with('error', 'Transaction not found');
+        }
+
+        try {
+            $transaction->delete();
+            return redirect()->route('transactions.index')
+                ->with('success', 'Transaction deleted successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to delete transaction: ' . $e->getMessage());
+        }
     }
 }

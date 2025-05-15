@@ -4,6 +4,8 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
+import { ref } from 'vue';
+import DonorCreateModal from '@/Components/DonorCreateModal.vue';
 
 const toast = useToast();
 const breadcrumbs: BreadcrumbItem[] = [
@@ -11,7 +13,17 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Create Income', href: '/incomes/create' },
 ];
 
-// Receiving dropdown data for donors and funds from the controller
+// Donor create modal reference
+const donorCreateModal = ref();
+const isDonorButtonHovered = ref(false);
+
+// Handle new donor creation
+const handleDonorCreated = (newDonorId: number) => {
+    form.donor_id = newDonorId; // Auto-select the new donor
+    donorCreateModal.value.close(); // Explicitly close the modal
+};
+
+// Receiving dropdown data
 defineProps<{
     donors: { id: number, name: string }[];
     funds: { id: number, name: string }[];
@@ -49,22 +61,41 @@ const submit = () => {
 <template>
     <Head title="Create Income Transaction" />
     <AppLayout :breadcrumbs="breadcrumbs">
+        <!-- Donor Create Modal -->
+        <DonorCreateModal ref="donorCreateModal" @donor-created="handleDonorCreated" />
+
         <form @submit.prevent="submit" class="space-y-4">
             <div class="p-4 space-y-4">
                 <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                     <h1 class="text-2xl font-bold mb-6">Create New Income</h1>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- Donor ID (Dropdown) -->
+                        <!-- Donor Field with Quick Add -->
                         <div>
                             <label class="block font-semibold mb-1">Donor</label>
-                            <select v-model="form.donor_id" class="w-full border rounded px-3 py-2"
-                                :class="{ 'border-red-500': form.errors.donor_id }">
-                                <option value="">Select Donor</option>
-                                <option v-for="donor in donors" :key="donor.id" :value="donor.id">
-                                    {{ donor.name }}
-                                </option>
-                            </select>
+                            <div class="relative">
+                                <select v-model="form.donor_id"
+                                    class="w-full border rounded px-3 py-2 pr-10 appearance-none"
+                                    :class="{ 'border-red-500': form.errors.donor_id }">
+                                    <option value="">Select Donor</option>
+                                    <option v-for="donor in donors" :key="donor.id" :value="donor.id">
+                                        {{ donor.name }}
+                                    </option>
+                                </select>
+                                <!-- Quick Add Button with enhanced hover effect -->
+                                <button type="button" @click.stop="donorCreateModal.open()"
+                                    @mouseenter="isDonorButtonHovered = true" @mouseleave="isDonorButtonHovered = false"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 transition-colors duration-200"
+                                    :class="isDonorButtonHovered ? 'text-blue-600' : 'text-gray-500'"
+                                    title="Quick add donor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 bg-blue-700 text-white" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
                             <div v-if="form.errors.donor_id" class="text-red-500 text-sm">{{ form.errors.donor_id }}</div>
                         </div>
 
