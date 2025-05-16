@@ -169,6 +169,26 @@ const emit = defineEmits(['close']);
 const isOpen = ref(false);
 const receiptElement = ref<HTMLElement | null>(null);
 
+// Check if Web Share API is available
+const isWebShareSupported = () => {
+    return navigator.share && navigator.canShare;
+};
+
+// Check if Web Share API with files is supported
+const isFileShareSupported = () => {
+    if (!navigator.canShare) return false;
+
+    try {
+        return navigator.canShare({
+            files: [new File([''], 'test.png', { type: 'image/png' })],
+            title: 'Test',
+            text: 'Test'
+        });
+    } catch {
+        return false;
+    }
+};
+
 const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
@@ -192,7 +212,6 @@ const formatCurrency = (amount: string) => {
         maximumFractionDigits: 2
     });
 
-    // Use the Unicode Taka symbol directly
     return `BDT ${formatted}`;
 };
 
@@ -224,35 +243,53 @@ const generateReceiptImage = async (): Promise<HTMLCanvasElement> => {
         throw new Error('Receipt element not found');
     }
 
+    // Add a small delay to ensure all elements are rendered
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     // Force light mode for printing
     const originalDarkMode = document.documentElement.classList.contains('dark');
     document.documentElement.classList.remove('dark');
 
+    // Create a container for the clone that's off-screen and hidden
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.visibility = 'hidden';
+    container.style.zIndex = '-9999';
+    container.id = 'receipt-capture-container';
+
     // Clone the element with all children
     const clone = receiptElement.value.cloneNode(true) as HTMLElement;
-    clone.style.position = 'absolute';
-    clone.style.left = '0';
-    clone.style.top = '0';
-    clone.style.width = `${receiptElement.value.offsetWidth}px`;
+    clone.style.position = 'relative';
     clone.style.visibility = 'visible';
-    clone.style.zIndex = '99999';
+    clone.style.width = `${receiptElement.value.offsetWidth}px`;
     clone.id = 'receipt-clone';
 
-    document.body.appendChild(clone);
+    container.appendChild(clone);
+    document.body.appendChild(container);
 
     try {
         const canvas = await html2canvas(clone, {
             scale: 2,
             backgroundColor: '#ffffff',
-            logging: true, // Enable to see console logs
+            logging: false,
             useCORS: true,
             scrollX: 0,
             scrollY: 0,
             windowWidth: clone.scrollWidth,
             windowHeight: clone.scrollHeight,
             ignoreElements: (element) => {
-                // Ignore any buttons or interactive elements
                 return element.tagName === 'BUTTON';
+            },
+            onclone: (clonedDoc) => {
+                // Ensure any cloned elements are also hidden
+                const clonedContainer = clonedDoc.getElementById('receipt-capture-container');
+                if (clonedContainer) {
+                    clonedContainer.style.visibility = 'hidden';
+                    clonedContainer.style.position = 'fixed';
+                    clonedContainer.style.left = '-9999px';
+                }
             }
         });
 
@@ -263,7 +300,11 @@ const generateReceiptImage = async (): Promise<HTMLCanvasElement> => {
 
         return canvas;
     } finally {
-        document.body.removeChild(clone);
+        // Ensure container is removed even if errors occur
+        const container = document.getElementById('receipt-capture-container');
+        if (container) {
+            document.body.removeChild(container);
+        }
     }
 };
 
@@ -271,44 +312,102 @@ const shareReceipt = async () => {
     try {
         const canvas = await generateReceiptImage();
 
-        canvas.toBlob(async (blob) => {
-            if (!blob) {
-                throw new Error('Failed to create image blob');
+        // Convert canvas to blob
+        const blob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob(resolve, 'image/png', 1);
+        });
+
+        if (!blob) {
+            throw new Error('Failed to create image blob');
+        }
+
+        const fileName = `receipt-${props.transaction.txn_id}.png`;
+        const file = new File([blob], fileName, { type: 'image/png' });
+
+        const shareData = {
+            files: [file],
+            title: props.transaction.type === 'credit' ? 'Donation Receipt' : 'Payment Receipt',
+            text: props.transaction.type === 'credit'
+                ? `I donated ${formatCurrency(props.transaction.amount)} to Your Organization`
+                : `Payment of ${formatCurrency(props.transaction.amount)} to Your Organization`
+        };
+
+        // Check if sharing is supported
+        if (navigator.canShare && navigator.canShare(shareData)) {
+            try {
+                // Add a small delay to ensure share dialog stays open
+                await new Promise<void>((resolve, reject) => {
+                    navigator.share(shareData)
+                        .then(() => resolve())
+                        .catch(reject);
+
+                    // Add a fallback timeout in case the share dialog closes immediately
+                    setTimeout(() => {
+                        // This helps keep the share dialog open on some browsers
+                        console.log('Share dialog active');
+                    }, 100);
+                });
+
+                return;
+            } catch (shareError) {
+                console.log('Share failed, falling back to download', shareError);
+                // Continue to download fallback
             }
+        }
 
-            const file = new File([blob], `receipt-${props.transaction.txn_id}.png`, {
-                type: 'image/png'
-            });
+        // Fallback to download
+        downloadImageFromCanvas(canvas);
+        toast.info('Sharing not supported. The receipt has been downloaded instead.');
 
-            const shareData = {
-                files: [file],
-                title: props.transaction.type === 'credit' ? 'Donation Receipt' : 'Payment Receipt',
-                text: props.transaction.type === 'credit'
-                    ? `I just donated ${formatCurrency(props.transaction.amount)} to Your Organization!`
-                    : `Payment of ${formatCurrency(props.transaction.amount)} to Your Organization`
-            };
-
-            if (navigator.canShare && navigator.canShare(shareData)) {
-                await navigator.share(shareData);
-            } else {
-                downloadImageFromCanvas(canvas);
-                toast.info('Sharing not supported. The receipt has been downloaded instead.');
-            }
-        }, 'image/png');
     } catch (error) {
         console.error('Error sharing receipt:', error);
-        toast.error(`Error sharing receipt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+        if (error instanceof Error) {
+            if (error.message.includes('cancel')) {
+                // User cancelled the share - no need to show error
+                return;
+            }
+            toast.error(`Error sharing: ${error.message}`);
+        }
+
+        // Final fallback
+        try {
+            const canvas = await generateReceiptImage();
+            downloadImageFromCanvas(canvas);
+        } catch (fallbackError) {
+            console.error('Fallback failed:', fallbackError);
+        }
     }
 };
 
 const downloadImageFromCanvas = (canvas: HTMLCanvasElement) => {
-    const link = document.createElement('a');
-    link.download = `${props.transaction.type === 'credit' ? 'donation' : 'payment'}-receipt-${props.transaction.txn_id}.png`;
-    link.href = canvas.toDataURL('image/png');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Receipt downloaded successfully');
+    return new Promise<void>((resolve, reject) => {
+        try {
+            const link = document.createElement('a');
+            link.download = `receipt-${props.transaction.txn_id}.png`;
+
+            // Use setTimeout to ensure the click happens after the current event loop
+            setTimeout(() => {
+                try {
+                    link.href = canvas.toDataURL('image/png');
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+
+                    // Clean up after a small delay
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(link.href);
+                        resolve();
+                    }, 100);
+                } catch (error) {
+                    reject(error);
+                }
+            }, 50);
+        } catch (error) {
+            reject(error);
+        }
+    });
 };
 
 const downloadReceipt = async () => {
@@ -402,9 +501,12 @@ defineExpose({
     body * {
         visibility: hidden;
     }
-    #receipt, #receipt * {
+
+    #receipt,
+    #receipt * {
         visibility: visible;
     }
+
     #receipt {
         position: absolute;
         left: 0;
@@ -427,5 +529,4 @@ defineExpose({
 
 #receipt .dark\:text-white {
     color: black !important;
-}
-</style>
+}</style>
