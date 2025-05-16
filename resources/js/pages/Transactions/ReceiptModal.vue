@@ -25,12 +25,12 @@
                                         class="text-2xl" />
                                 </div>
                                 <div class="ml-4">
-                                    <h1 class="text-2xl font-bold">{{ transaction.type === 'credit' ? 'Donation Receipt' :
-                                        'Payment Receipt' }}</h1>
+                                    <h1 class="text-2xl font-bold">{{ transaction.type === 'credit' ? 'অনুদানের রসিদ' :
+                                        'পেমেন্ট রসিদ' }}</h1>
                                     <p class="text-indigo-100">
                                         {{ transaction.type === 'credit'
-                                            ? 'Thank you for your generous support!'
-                                            : 'Thank you for your payment!' }}
+                                            ? 'আপনার উদার সহায়তার জন্য ধন্যবাদ!'
+                                            : 'আপনার পেমেন্টের জন্য ধন্যবাদ!' }}
                                     </p>
                                 </div>
                             </div>
@@ -47,11 +47,20 @@
                         <div class="mb-8 text-center">
                             <div
                                 class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-indigo-100/50 dark:border-indigo-900/50 overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center">
-                                <font-awesome-icon :icon="['fas', 'building']"
-                                    class="text-indigo-600 dark:text-indigo-400 text-3xl" />
+                                <img
+                                v-if="organization.logo_path"
+                                :src="organization.logo_path"
+                                alt="Organization Logo"
+                                class="object-contain w-full h-full"
+                                />
+                                <font-awesome-icon
+                                v-else
+                                :icon="['fas', 'building']"
+                                class="text-indigo-600 dark:text-indigo-400 text-3xl"
+                                />
                             </div>
-                            <h2 class="text-xl font-bold text-gray-800 dark:text-white">Your Organization</h2>
-                            <p class="text-gray-500 dark:text-gray-300">Building a better tomorrow</p>
+                            <h2 class="text-xl font-bold text-gray-800 dark:text-white">{{ organization.name }}</h2>
+                            <p class="text-gray-500 dark:text-gray-300">{{ organization.slogan }}</p>
                         </div>
 
                         <!-- Transaction Details -->
@@ -73,39 +82,40 @@
 
                             <div class="space-y-3">
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Date</span>
+                                    <span class="text-gray-600 dark:text-gray-300">তারিখ</span>
                                     <span class="font-semibold text-gray-800 dark:text-white">{{
                                         formatDate(transaction.created_at) }}</span>
                                 </div>
 
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Payment Method</span>
+                                    <span class="text-gray-600 dark:text-gray-300">{{ transaction.type === 'credit' ? 'অনুদান মাধ্যম' :
+                                        'পেমেন্ট মাধ্যম' }}</span>
                                     <span class="font-semibold text-gray-800 dark:text-white capitalize">{{
                                         transaction.payment_method }}</span>
                                 </div>
 
                                 <!-- Show Donor for Credit, Raiser for Debit -->
                                 <div v-if="transaction.donor && transaction.type === 'credit'" class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Donor Name</span>
+                                    <span class="text-gray-600 dark:text-gray-300">দাতার নাম</span>
                                     <span class="font-semibold text-gray-800 dark:text-white">{{ transaction.donor.name
                                     }}</span>
                                 </div>
 
                                 <div v-if="transaction.type === 'debit'" class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Raiser Name</span>
+                                    <span class="text-gray-600 dark:text-gray-300">উত্তোলনকারীর নাম</span>
                                     <span class="font-semibold text-gray-800 dark:text-white">
                                         {{ transaction.donor?.name || 'Organization' }}
                                     </span>
                                 </div>
 
                                 <div v-if="transaction.fund" class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Fund</span>
+                                    <span class="text-gray-600 dark:text-gray-300">তহবিল</span>
                                     <span class="font-semibold text-gray-800 dark:text-white">{{ transaction.fund.name
                                     }}</span>
                                 </div>
 
                                 <div v-if="transaction.purpose" class="flex justify-between">
-                                    <span class="text-gray-600 dark:text-gray-300">Purpose</span>
+                                    <span class="text-gray-600 dark:text-gray-300">উদ্দেশ্য</span>
                                     <span class="font-semibold text-gray-800 dark:text-white">{{ transaction.purpose
                                     }}</span>
                                 </div>
@@ -116,11 +126,11 @@
                         <div class="text-center">
                             <p class="text-gray-400 dark:text-gray-400 text-sm mb-1">
                                 {{ transaction.type === 'credit'
-                                    ? 'Your contribution helps us continue our important work.'
-                                    : 'This payment helps us continue our important work.' }}
+                                    ? 'আপনার সহযোগিতা আমাদের কাজ অব্যাহত রাখার অনুপ্রেরণা জোগায়।'
+                                    : 'এই অর্থায়ন কল্যাণমূলক কার্যক্রমের উন্নয়নে ব্যবহৃত হয়েছে।' }}
                             </p>
                             <p class="text-gray-400 dark:text-gray-400 text-xs">
-                                This receipt serves as an official record.
+                                এই রসিদটি সংরক্ষণের জন্য একটি অফিসিয়াল ডকুমেন্ট।
                             </p>
                         </div>
                     </div>
@@ -161,8 +171,15 @@ import type { Transaction } from '@/types';
 
 const toast = useToast();
 
+interface Organization {
+    name: string;
+    slogan: string;
+    logo_path: string;
+}
+
 const props = defineProps<{
     transaction: Transaction;
+    organization: Organization;
 }>();
 
 const emit = defineEmits(['close']);

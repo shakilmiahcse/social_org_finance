@@ -32,6 +32,7 @@ class OrgSettingController extends Controller
             'website' => 'nullable|url|max:255',
             'timezone' => 'nullable|string|max:100',
             'currency' => 'nullable|string|max:10',
+            'slogan' => 'nullable|string|max:255',
         ]);
 
         $user = $request->user();
@@ -39,20 +40,20 @@ class OrgSettingController extends Controller
         $data = $request->except('logo_path');
 
         if ($request->hasFile('logo_path')) {
-            // Store new logo
-            $path = $request->file('logo_path')->store('public/logos');
-            $data['logo_path'] = Storage::url($path);
+            // Store file on the 'public' disk inside 'logos' folder (no 'public/' prefix)
+            $path = $request->file('logo_path')->store('logos', 'public');
+            $data['logo_path'] = Storage::url($path);  // e.g. /storage/logos/filename.png
 
             // Delete old logo if exists
             if ($organization->logo_path) {
-                $oldPath = str_replace('storage/', 'public/', $organization->logo_path);
-                Storage::delete($oldPath);
+                // Remove '/storage' prefix to get storage path
+                $oldPath = str_replace('/storage/', '', $organization->logo_path);
+                Storage::disk('public')->delete($oldPath);
             }
         }
 
         $organization->update($data);
 
-        // 🔁 Update session with new organization data
         session([
             'organization_id' => $organization->id,
             'organization_name' => $organization->name,
@@ -64,6 +65,7 @@ class OrgSettingController extends Controller
             'organization_timezone' => $organization->timezone,
             'organization_currency' => $organization->currency,
             'organization_is_active' => $organization->is_active,
+            'organization_slogan' => $organization->slogan,
         ]);
 
         return back()->with('success', 'Organization settings updated successfully');

@@ -24,6 +24,7 @@ const form = useForm({
     website: props.organization?.website || '',
     timezone: props.organization?.timezone || '',
     currency: props.organization?.currency || '',
+    slogan: props.organization?.slogan || '',
     logo_path: null as File | null,
 });
 
@@ -64,6 +65,12 @@ const submit = () => {
                             <Label for="name">Name</Label>
                             <Input id="name" v-model="form.name" type="text" class="w-full border rounded px-3 py-2" />
                             <InputError :message="form.errors.name" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="slogan">Slogan</Label>
+                            <Input id="slogan" v-model="form.slogan" type="text" class="w-full border rounded px-3 py-2" />
+                            <InputError :message="form.errors.slogan" />
                         </div>
 
                         <div class="grid gap-2">

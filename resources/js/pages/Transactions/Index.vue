@@ -43,6 +43,7 @@ const props = defineProps({
         }>,
         required: true
     },
+    organization: Object,
 });
 
 
@@ -283,7 +284,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 
         <ViewTransactionModal ref="viewTransactionModal" :transaction="selectedTransaction" />
         <EditTransactionModal ref="editTransactionModal" :transaction="selectedTransaction" />
-        <ReceiptModal ref="receiptModal" :transaction="selectedTransaction" />
+        <ReceiptModal ref="receiptModal" :transaction="selectedTransaction" :organization="organization"/>
     </AppLayout>
 </template>
 

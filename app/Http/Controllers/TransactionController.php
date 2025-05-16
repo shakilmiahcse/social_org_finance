@@ -57,7 +57,12 @@ class TransactionController extends Controller
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
             'donors' => $donors,
-            'funds' => $funds
+            'funds' => $funds,
+            'organization' => [
+                'name' => session('organization_name'),
+                'slogan' => session('organization_slogan'),
+                'logo_path' => session('organization_logo_path'),
+            ],
         ]);
     }
 
