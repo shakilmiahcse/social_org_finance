@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use App\Models\Transaction;
 use App\Models\Donor;
 use App\Models\Fund;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -36,6 +37,8 @@ class DashboardController extends Controller
             ->orderByDesc('transactions_sum_amount')
             ->get();
 
+        Log::info('fundAllocation: '. $fundAllocation);
+
         $topDonors = Donor::withSum('transactions', 'amount')
             ->orderByDesc('transactions_sum_amount')
             ->take(5)
@@ -52,6 +55,8 @@ class DashboardController extends Controller
             ->orderBy('year')
             ->orderBy('month')
             ->get();
+
+        Log::info('transactionTrends: ' . $transactionTrends);
 
         return Inertia::render('Dashboard', [
             'recentTransactions' => $transactions,

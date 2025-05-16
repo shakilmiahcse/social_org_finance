@@ -2,7 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import {
     Chart as ChartJS,
     ArcElement,
@@ -16,8 +16,9 @@ import {
     Tooltip,
     Legend
 } from 'chart.js'
-import { Pie, Line, Bar } from 'vue-chartjs'
+import { Pie, Line } from 'vue-chartjs'
 
+// Register ChartJS components
 ChartJS.register(
     ArcElement,
     LineElement,
@@ -31,7 +32,7 @@ ChartJS.register(
     Legend
 )
 
-defineProps<{
+const props = defineProps<{
     recentTransactions: Array<object>,
     financialSummary: {
         balance: number,
@@ -50,49 +51,112 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' }
 ];
 
-// Chart data
+// Chart data refs
 const fundChartData = ref({
-    labels: [],
+    labels: [] as string[],
     datasets: [{
-        data: [],
+        data: [] as number[],
         backgroundColor: [
             '#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'
-        ]
+        ],
+        borderWidth: 1
     }]
 });
 
 const trendChartData = ref({
-    labels: [],
+    labels: [] as string[],
     datasets: [
         {
             label: 'Credit',
-            data: [],
+            data: [] as number[],
             borderColor: '#10B981',
             backgroundColor: '#10B981',
-            tension: 0.3
+            tension: 0.3,
+            borderWidth: 2
         },
         {
             label: 'Debit',
-            data: [],
+            data: [] as number[],
             borderColor: '#EF4444',
             backgroundColor: '#EF4444',
-            tension: 0.3
+            tension: 0.3,
+            borderWidth: 2
         }
     ]
 });
 
-// Process data when props are available
-const processChartData = (fundAllocation, transactionTrends) => {
-    fundChartData.value.labels = fundAllocation.map(fund => fund.name);
-    fundChartData.value.datasets[0].data = fundAllocation.map(fund => fund.transactions_sum_amount);
-
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    trendChartData.value.labels = transactionTrends.map(t =>
-        `${monthNames[t.month - 1]} ${t.year}`
-    );
-    trendChartData.value.datasets[0].data = transactionTrends.map(t => t.credit);
-    trendChartData.value.datasets[1].data = transactionTrends.map(t => t.debit);
+// Chart options
+const pieChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: 'right' as const,
+        },
+        tooltip: {
+            callbacks: {
+                label: function (context: any) {
+                    return '৳' + context.raw.toLocaleString();
+                }
+            }
+        }
+    }
 };
+
+const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+        y: {
+            beginAtZero: true,
+            ticks: {
+                callback: function (value: any) {
+                    return '৳' + value;
+                }
+            }
+        }
+    },
+    plugins: {
+        tooltip: {
+            callbacks: {
+                label: function (context: any) {
+                    return context.dataset.label + ': ৳' + context.raw.toLocaleString();
+                }
+            }
+        }
+    }
+};
+
+// Define processChartData first
+const processChartData = (fundAllocation: any[], transactionTrends: any[]) => {
+    // Process Fund Allocation data
+    if (fundAllocation && fundAllocation.length) {
+        fundChartData.value.labels = fundAllocation.map(fund => fund.name);
+        fundChartData.value.datasets[0].data = fundAllocation.map(fund =>
+            parseFloat(fund.transactions_sum_amount) || 0
+        );
+    }
+
+    // Process Transaction Trends data
+    if (transactionTrends && transactionTrends.length) {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        trendChartData.value.labels = transactionTrends.map(t =>
+            `${monthNames[t.month - 1]} ${t.year}`
+        );
+        trendChartData.value.datasets[0].data = transactionTrends.map(t =>
+            parseFloat(t.credit) || 0
+        );
+        trendChartData.value.datasets[1].data = transactionTrends.map(t =>
+            parseFloat(t.debit) || 0
+        );
+    }
+};
+
+// Then set up the watcher
+watch(() => [props.fundAllocation, props.transactionTrends], () => {
+    processChartData(props.fundAllocation, props.transactionTrends);
+}, { immediate: true });
 </script>
 
 <template>
@@ -100,7 +164,7 @@ const processChartData = (fundAllocation, transactionTrends) => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-4 space-y-6">
             <!-- Alerts Section -->
-            <div v-if="alerts.length" class="space-y-2">
+            <div v-if="alerts && alerts.length" class="space-y-2">
                 <div v-for="(alert, index) in alerts" :key="index" :class="{
                     'bg-yellow-50 border-yellow-400 text-yellow-700': alert.type === 'warning',
                     'bg-blue-50 border-blue-400 text-blue-700': alert.type === 'info'
@@ -153,15 +217,8 @@ const processChartData = (fundAllocation, transactionTrends) => {
                 <div class="bg-[#FAFAFA] rounded-xl shadow p-6">
                     <h3 class="text-lg font-semibold mb-4">Fund Allocation</h3>
                     <div class="h-64">
-                        <Pie v-if="fundAllocation.length" :data="fundChartData" :options="{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    position: 'right'
-                                }
-                            }
-                        }" />
+                        <Pie v-if="fundAllocation && fundAllocation.length" :data="fundChartData"
+                            :options="pieChartOptions" />
                         <div v-else class="h-full flex items-center justify-center text-gray-500">
                             No fund allocation data available
                         </div>
@@ -172,15 +229,8 @@ const processChartData = (fundAllocation, transactionTrends) => {
                 <div class="bg-[#FAFAFA] rounded-xl shadow p-6">
                     <h3 class="text-lg font-semibold mb-4">Transaction Trends (Last 6 Months)</h3>
                     <div class="h-64">
-                        <Line v-if="transactionTrends.length" :data="trendChartData" :options="{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            }
-                        }" />
+                        <Line v-if="transactionTrends && transactionTrends.length" :data="trendChartData"
+                            :options="lineChartOptions" />
                         <div v-else class="h-full flex items-center justify-center text-gray-500">
                             No transaction trends data available
                         </div>
@@ -213,8 +263,9 @@ const processChartData = (fundAllocation, transactionTrends) => {
                                 </thead>
                                 <tbody class="bg-[#FAFAFA] divide-y divide-gray-200">
                                     <tr v-for="txn in recentTransactions" :key="txn.id">
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{
-                                            txn.txn_id }}</td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            {{ txn.txn_id }}
+                                        </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm"
                                             :class="txn.type === 'credit' ? 'text-green-600' : 'text-red-600'">
                                             {{ txn.type === 'credit' ? '+' : '-' }}৳{{ txn.amount }}
@@ -238,7 +289,7 @@ const processChartData = (fundAllocation, transactionTrends) => {
                 <div class="bg-[#FAFAFA] rounded-xl shadow">
                     <div class="p-6">
                         <h3 class="text-lg font-semibold mb-4">Top Donors</h3>
-                        <div v-if="topDonors.length" class="space-y-4">
+                        <div v-if="topDonors && topDonors.length" class="space-y-4">
                             <div v-for="donor in topDonors" :key="donor.id" class="flex items-center">
                                 <div
                                     class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
