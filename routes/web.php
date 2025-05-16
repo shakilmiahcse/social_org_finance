@@ -8,6 +8,7 @@ use App\Http\Controllers\CampaignAdjustmentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReportController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -26,6 +27,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('adjustments', CampaignAdjustmentController::class);
     Route::resource('users', UserController::class);
     Route::resource('roles-permissions', RolePermissionController::class);
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 });
 
 require __DIR__.'/settings.php';

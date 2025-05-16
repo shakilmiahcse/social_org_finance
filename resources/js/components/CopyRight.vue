@@ -6,7 +6,7 @@
                 <span>|</span>
                 <span>
                     Developed by
-                    <a href="#" class="hover:underline text-success">Shakil Miah</a>
+                    <a href="https://www.facebook.com/profile.php?id=100085949539249" target="_blank" class="hover:underline text-success">Shakil Miah</a>
                 </span>
             </div>
             <div class="text-right">

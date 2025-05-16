@@ -80,7 +80,7 @@ const mainNavItems: NavItem[] = [
         children: [
             {
                 title: 'Financial',
-                href: '',
+                href: '/reports',
             },
             // Donor Reports
             {
