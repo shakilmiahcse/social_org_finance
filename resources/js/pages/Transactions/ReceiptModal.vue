@@ -8,10 +8,10 @@
             <div
                 class="relative transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 text-left shadow-xl transition-all w-full max-w-lg mx-auto my-8">
                 <!-- Receipt Content -->
-                <div id="receipt" class="bg-white dark:bg-gray-800 relative overflow-hidden">
+                <div id="receipt" ref="receiptElement" class="bg-white dark:bg-gray-800 relative overflow-hidden p-0">
                     <!-- Watermark -->
                     <div
-                        class="absolute text-indigo-500/10 dark:text-indigo-400/10 -left-20 -top-20 text-9xl font-bold transform -rotate-30 select-none">
+                        class="absolute text-indigo-500/10 dark:text-indigo-400/10 -left-20 -top-20 text-9xl font-bold transform -rotate-30 select-none pointer-events-none">
                         {{ transaction.type === 'credit' ? 'RECEIPT' : 'PAYMENT' }}
                     </div>
 
@@ -144,7 +144,7 @@
                         Print
                     </button>
                     <button @click="closeModal"
-                        class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                        class="bg-red-500 text-white dark:text-gray-300 hover:text-gray-800 dark:hover:text-white px-4 py-2 rounded-lg flex items-center transition-colors">
                         Close
                     </button>
                 </div>
@@ -167,6 +167,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['close']);
 const isOpen = ref(false);
+const receiptElement = ref<HTMLElement | null>(null);
 
 const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -219,28 +220,47 @@ const closeModal = () => {
 };
 
 const generateReceiptImage = async (): Promise<HTMLCanvasElement> => {
-    const element = document.getElementById('receipt');
-    if (!element) throw new Error('Receipt element not found');
+    if (!receiptElement.value) {
+        throw new Error('Receipt element not found');
+    }
 
-    // Create a clone to avoid modifying the original element
-    const clone = element.cloneNode(true) as HTMLElement;
-    clone.style.visibility = 'hidden';
+    // Force light mode for printing
+    const originalDarkMode = document.documentElement.classList.contains('dark');
+    document.documentElement.classList.remove('dark');
+
+    // Clone the element with all children
+    const clone = receiptElement.value.cloneNode(true) as HTMLElement;
     clone.style.position = 'absolute';
-    clone.style.left = '-9999px';
+    clone.style.left = '0';
+    clone.style.top = '0';
+    clone.style.width = `${receiptElement.value.offsetWidth}px`;
+    clone.style.visibility = 'visible';
+    clone.style.zIndex = '99999';
+    clone.id = 'receipt-clone';
+
     document.body.appendChild(clone);
 
     try {
         const canvas = await html2canvas(clone, {
             scale: 2,
-            useCORS: true,
             backgroundColor: '#ffffff',
-            logging: false,
-            allowTaint: false,
+            logging: true, // Enable to see console logs
+            useCORS: true,
             scrollX: 0,
             scrollY: 0,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight
+            windowWidth: clone.scrollWidth,
+            windowHeight: clone.scrollHeight,
+            ignoreElements: (element) => {
+                // Ignore any buttons or interactive elements
+                return element.tagName === 'BUTTON';
+            }
         });
+
+        // Restore original dark mode state
+        if (originalDarkMode) {
+            document.documentElement.classList.add('dark');
+        }
+
         return canvas;
     } finally {
         document.body.removeChild(clone);
@@ -260,14 +280,16 @@ const shareReceipt = async () => {
                 type: 'image/png'
             });
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    title: props.transaction.type === 'credit' ? 'Donation Receipt' : 'Payment Receipt',
-                    text: props.transaction.type === 'credit'
-                        ? `I just donated ${formatCurrency(props.transaction.amount)}`
-                        : `Payment of ${formatCurrency(props.transaction.amount)}`,
-                    files: [file]
-                });
+            const shareData = {
+                files: [file],
+                title: props.transaction.type === 'credit' ? 'Donation Receipt' : 'Payment Receipt',
+                text: props.transaction.type === 'credit'
+                    ? `I just donated ${formatCurrency(props.transaction.amount)} to Your Organization!`
+                    : `Payment of ${formatCurrency(props.transaction.amount)} to Your Organization`
+            };
+
+            if (navigator.canShare && navigator.canShare(shareData)) {
+                await navigator.share(shareData);
             } else {
                 downloadImageFromCanvas(canvas);
                 toast.info('Sharing not supported. The receipt has been downloaded instead.');
@@ -303,6 +325,8 @@ const printReceipt = async () => {
     try {
         const canvas = await generateReceiptImage();
         const dataUrl = canvas.toDataURL('image/png');
+
+        // Create a new window with proper print styles
         const printWindow = window.open('', '_blank');
 
         if (printWindow) {
@@ -312,9 +336,23 @@ const printReceipt = async () => {
                 <head>
                     <title>Print Receipt</title>
                     <style>
-                        @page { size: auto; margin: 0; }
-                        body { margin: 0; padding: 0; }
-                        img { max-width: 100%; height: auto; display: block; }
+                        @page {
+                            size: auto;
+                            margin: 5mm;
+                        }
+                        body {
+                            margin: 0;
+                            padding: 0;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                        }
+                        img {
+                            max-width: 100%;
+                            height: auto;
+                            object-fit: contain;
+                        }
                     </style>
                 </head>
                 <body>
@@ -323,7 +361,9 @@ const printReceipt = async () => {
                         window.onload = function() {
                             setTimeout(function() {
                                 window.print();
-                                window.close();
+                                setTimeout(function() {
+                                    window.close();
+                                }, 100);
                             }, 200);
                         };
                     <\/script>
@@ -357,9 +397,35 @@ defineExpose({
     opacity: 0.03;
 }
 
+/* Add to your style section */
 @media print {
-    body {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+    body * {
+        visibility: hidden;
     }
-}</style>
+    #receipt, #receipt * {
+        visibility: visible;
+    }
+    #receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* Ensure all elements are visible for html2canvas */
+#receipt {
+    background-color: white !important;
+    color: black !important;
+}
+
+#receipt .dark\:bg-gray-800 {
+    background-color: white !important;
+}
+
+#receipt .dark\:text-white {
+    color: black !important;
+}
+</style>
