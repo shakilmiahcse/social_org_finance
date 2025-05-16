@@ -100,6 +100,8 @@ const formatPermissions = (permissions) => {
         return `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${parts[0]}.${parts[1]}</span>`;
     }).join(' ');
 };
+const rowsPerPage = ref(20);
+const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
 
 <template>
@@ -125,8 +127,7 @@ const formatPermissions = (permissions) => {
 
                 <!-- Roles table -->
                 <div class="overflow-auto">
-                    <EasyDataTable :headers="headers" :items="filteredRoles" header-text-direction="left" rows-per-page="20"
-                        :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table min-w-[700px]">
+                    <EasyDataTable :headers="headers" :items="filteredRoles" header-text-direction="left" :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination class="custom-table min-w-[700px]">
                         <template #item-actions="{ id, name }">
                             <div v-if="name !== 'admin'" class="flex items-center space-x-3 my-1">
                                 <!-- Edit Icon Button -->

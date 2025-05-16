@@ -158,6 +158,8 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
+const rowsPerPage = ref(20);
+const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
 
 <template>
@@ -195,8 +197,7 @@ onUnmounted(() => {
 
                 <!-- Fund table -->
                 <div class="overflow-auto">
-                    <EasyDataTable :headers="headers" :items="filteredFunds" header-text-direction="left" rows-per-page="20"
-                        :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table min-w-[700px]">
+                    <EasyDataTable :headers="headers" :items="filteredFunds" header-text-direction="left" :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination class="custom-table min-w-[700px]">
                         <template #item-type="{ type }">
                             <span
                                 :class="[

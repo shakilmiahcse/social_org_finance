@@ -96,6 +96,8 @@ const formatRoles = (roles) => {
         `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${role}</span>`
     ).join(' ');
 };
+const rowsPerPage = ref(20);
+const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
 
 <template>
@@ -118,8 +120,7 @@ const formatRoles = (roles) => {
                 </div>
 
                 <div class="overflow-auto">
-                    <EasyDataTable :headers="headers" :items="filteredUsers" header-text-direction="left" rows-per-page="20"
-                        :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table min-w-[700px]">
+                    <EasyDataTable :headers="headers" :items="filteredUsers" header-text-direction="left" :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination class="custom-table min-w-[700px]">
                         <template #item-roles="{ roles }">
                             <div v-html="formatRoles(roles)" class="flex flex-wrap gap-1"></div>
                         </template>

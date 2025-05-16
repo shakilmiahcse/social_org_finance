@@ -144,6 +144,8 @@ const resetDateRange = () => {
 watch(activeTab, () => {
     searchTerm.value = ''; // Reset search when changing tabs
 });
+const rowsPerPage = ref(20);
+const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
 
 <template>
@@ -277,7 +279,7 @@ watch(activeTab, () => {
                                 class="border rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                         </div>
                         <EasyDataTable :headers="fundHeaders" :items="filteredFundAllocation" header-text-direction="left"
-                            rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table">
+                            :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination class="custom-table">
                             <template #item-amount="{ amount }">
                                 <span class="font-semibold">৳{{ amount.toLocaleString() }}</span>
                             </template>
@@ -291,7 +293,7 @@ watch(activeTab, () => {
                                 class="border rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                         </div>
                         <EasyDataTable :headers="donorHeaders" :items="filteredTopDonors" header-text-direction="left"
-                            rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination class="custom-table">
+                            :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination class="custom-table">
                             <template #item-amount="{ amount }">
                                 <span class="font-semibold">৳{{ amount.toLocaleString() }}</span>
                             </template>

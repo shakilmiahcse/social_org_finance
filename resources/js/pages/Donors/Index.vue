@@ -158,6 +158,8 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
+const rowsPerPage = ref(20);
+const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
 
 <template>
@@ -196,7 +198,7 @@ onUnmounted(() => {
                 <!-- Donor table -->
                 <div class="overflow-auto">
                     <EasyDataTable :headers="headers" :items="filteredDonors" header-text-direction="left"
-                        rows-per-page="20" :rows-items="[30, 50, 100, 200]" buttons-pagination
+                        :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination
                         class="custom-table min-w-[700px]">
                         <!-- Blood Group column -->
                         <template #item-blood_group="{ blood_group }">
