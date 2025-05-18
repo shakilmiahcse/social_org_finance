@@ -25,7 +25,7 @@ class OrgSettingController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'logo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:1024|dimensions:max_width=500,max_height=500',
+            'logo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:50|dimensions:max_width=500,max_height=500',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
