@@ -1,22 +1,22 @@
 <template>
     <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4">
-            <!-- Background overlay -->
-            <div class="absolute inset-0 bg-gray-500/75 dark:bg-gray-900/75" aria-hidden="true" @click="closeModal"></div>
+            <!-- Background overlay - soft green -->
+            <div class="absolute inset-0 bg-green-100/75 dark:bg-green-900/75" aria-hidden="true" @click="closeModal"></div>
 
             <!-- Modal container -->
             <div
-                class="relative transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 text-left shadow-xl transition-all w-full max-w-lg mx-auto my-8">
+                class="relative transform overflow-hidden rounded-xl bg-green-50 dark:bg-gray-800 text-left shadow-xl transition-all w-full max-w-lg mx-auto my-8">
                 <!-- Receipt Content -->
-                <div id="receipt" ref="receiptElement" class="bg-white dark:bg-gray-800 relative overflow-hidden p-0">
-                    <!-- Watermark -->
+                <div id="receipt" ref="receiptElement" class="bg-green-50 dark:bg-gray-800 relative overflow-hidden p-0">
+                    <!-- Watermark - green -->
                     <div
-                        class="absolute text-indigo-500/10 dark:text-indigo-400/10 -left-20 -top-20 text-9xl font-bold transform -rotate-30 select-none pointer-events-none">
+                        class="absolute text-green-500/10 dark:text-green-400/10 -left-20 -top-20 text-9xl font-bold transform -rotate-30 select-none pointer-events-none">
                         {{ transaction.type === 'credit' ? 'RECEIPT' : 'PAYMENT' }}
                     </div>
 
-                    <!-- Header -->
-                    <div class="bg-gradient-to-r from-indigo-600 to-purple-700 p-6 text-white relative">
+                    <!-- Header - green gradient -->
+                    <div class="bg-gradient-to-r from-green-600 to-emerald-700 p-6 text-white relative">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
@@ -27,7 +27,7 @@
                                 <div class="ml-4">
                                     <h1 class="text-2xl font-bold">{{ transaction.type === 'credit' ? 'অনুদানের রসিদ' :
                                         'পেমেন্ট রসিদ' }}</h1>
-                                    <p class="text-indigo-100">
+                                    <p class="text-green-100">
                                         {{ transaction.type === 'credit'
                                             ? 'আপনার উদার সহায়তার জন্য ধন্যবাদ!'
                                             : 'আপনার পেমেন্টের জন্য ধন্যবাদ!' }}
@@ -35,18 +35,18 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-indigo-100 text-sm">Transaction #</p>
+                                <p class="text-green-100 text-sm">Transaction #</p>
                                 <p class="font-mono font-semibold">{{ transaction.txn_id }}</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Body -->
-                    <div class="p-6 relative">
+                    <!-- Body - light soft green background -->
+                    <div class="p-6 relative bg-green-50 dark:bg-gray-800">
                         <!-- Organization Info -->
                         <div class="mb-8 text-center">
                             <div
-                                class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-indigo-100/50 dark:border-indigo-900/50 overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center">
+                                class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-green-100/50 dark:border-green-900/50 overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center">
                                 <img
                                 v-if="organization.logo_path"
                                 :src="organization.logo_path"
@@ -56,19 +56,19 @@
                                 <font-awesome-icon
                                 v-else
                                 :icon="['fas', 'building']"
-                                class="text-indigo-600 dark:text-indigo-400 text-3xl"
+                                class="text-green-600 dark:text-green-400 text-3xl"
                                 />
                             </div>
                             <h2 class="text-xl font-bold text-gray-800 dark:text-white">{{ organization.name }}</h2>
-                            <p class="text-gray-500 dark:text-gray-300">{{ organization.slogan }}</p>
+                            <p class="text-gray-600 dark:text-gray-300">{{ organization.slogan }}</p>
                         </div>
 
-                        <!-- Transaction Details -->
-                        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-5 mb-6">
+                        <!-- Transaction Details - lighter green background -->
+                        <div class="bg-green-100/50 dark:bg-gray-700/50 rounded-lg p-5 mb-6">
                             <div
-                                class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200 dark:border-gray-600">
+                                class="flex justify-between items-center mb-4 pb-4 border-b border-green-200 dark:border-gray-600">
                                 <div>
-                                    <p class="text-gray-500 dark:text-gray-300 text-sm">Transaction Amount</p>
+                                    <p class="text-gray-600 dark:text-gray-300 text-sm">Transaction Amount</p>
                                     <p class="text-3xl font-bold text-gray-800 dark:text-white">
                                         {{ formatCurrency(transaction.amount) }}
                                     </p>
@@ -124,12 +124,12 @@
 
                         <!-- Footer -->
                         <div class="text-center">
-                            <p class="text-gray-400 dark:text-gray-400 text-sm mb-1">
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-1">
                                 {{ transaction.type === 'credit'
                                     ? 'আপনার সহযোগিতা আমাদের কাজ অব্যাহত রাখার অনুপ্রেরণা জোগায়।'
                                     : 'এই অর্থায়ন কল্যাণমূলক কার্যক্রমের উন্নয়নে ব্যবহৃত হয়েছে।' }}
                             </p>
-                            <p class="text-gray-400 dark:text-gray-400 text-xs">
+                            <p class="text-gray-500 dark:text-gray-400 text-xs">
                                 এই রসিদটি সংরক্ষণের জন্য একটি অফিসিয়াল ডকুমেন্ট।
                             </p>
                         </div>
@@ -137,7 +137,7 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="bg-gray-50 dark:bg-gray-700/30 px-6 py-4 flex flex-wrap justify-center gap-3">
+                <div class="bg-green-100/50 dark:bg-gray-700/30 px-6 py-4 flex flex-wrap justify-center gap-3">
                     <button @click="shareReceipt"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
                         <font-awesome-icon :icon="['fas', 'share-alt']" class="mr-2" />
