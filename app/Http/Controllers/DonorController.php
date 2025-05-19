@@ -51,23 +51,62 @@ class DonorController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255|unique:donors,email',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:255',
-            'blood_group' => 'nullable|string|max:5',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'nullable|email|max:255|unique:donors,email',
+                'phone' => 'nullable|string|max:20',
+                'address' => 'nullable|string|max:255',
+                'blood_group' => 'nullable|string|max:5',
+            ]);
 
-        $organization_id = $request->session()->get("organization_id");
-        $validated['organization_id'] = $organization_id;
-        $validated['created_by'] = auth()->id();
-        $donor = Donor::create($validated);
+            $organization_id = $request->session()->get("organization_id");
+            $validated['organization_id'] = $organization_id;
+            $validated['created_by'] = auth()->id();
+            $donor = Donor::create($validated);
 
-        return redirect()->back()->with([
-            'success' => 'Donor created successfully',
-            'donor' => $donor
-        ]);
+            return response()->json([
+                'success' => true,
+                'donor' => [
+                    'id' => $donor->id,
+                    'name' => $donor->name
+                ],
+                'message' => 'Donor created successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getDropdown()
+    {
+        $organization_id = request()->session()->get("organization_id");
+        try {
+            $donors = Donor::where('organization_id', $organization_id)->latest()
+                ->get()
+                ->map(function ($donor) {
+                    return [
+                        'id' => $donor->id,
+                        'name' => $donor->name,
+                        'phone' => $donor->phone
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'donors' => $donors
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

@@ -124,8 +124,8 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         <template #item-roles="{ roles }">
                             <div v-html="formatRoles(roles)" class="flex flex-wrap gap-1"></div>
                         </template>
-                        <template #item-actions="{ id, name }">
-                            <div class="flex items-center space-x-3 my-1">
+                        <template #item-actions="{ id, name, roles }">
+                            <div class="flex items-center space-x-3 my-1" v-if="!roles.includes('admin')">
                                 <button @click.stop="editUser(filteredUsers.find(u => u.id === id))"
                                     class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800"
                                     title="Edit">

@@ -17,7 +17,9 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/donors/dropdown', [DonorController::class, 'getDropdown']);
     Route::resource('donors', DonorController::class);
+    Route::get('/funds/dropdown', [FundController::class, 'getDropdown']);
     Route::resource('funds', FundController::class);
     Route::get('incomes/create', [TransactionController::class, 'createIncome'])->name('incomes.create');
     Route::post('incomes', [TransactionController::class, 'storeIncome'])->name('incomes.store');

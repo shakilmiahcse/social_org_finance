@@ -29,7 +29,9 @@ const form = useForm({
 });
 
 const fileInput = ref<HTMLInputElement | null>(null);
-const previewUrl = ref(props.organization?.logo_path || null);
+const previewUrl = ref(
+    props.organization?.logo_path ? `/${props.organization.logo_path}` : null
+);
 
 const handleFileChange = (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0];
@@ -61,40 +63,45 @@ const submit = () => {
 
                 <form @submit.prevent="submit" class="space-y-6" enctype="multipart/form-data">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Name -->
                         <div class="grid gap-2">
                             <Label for="name">Name</Label>
-                            <Input id="name" v-model="form.name" type="text" class="w-full border rounded px-3 py-2" />
+                            <Input id="name" v-model="form.name" type="text" />
                             <InputError :message="form.errors.name" />
                         </div>
 
+                        <!-- Slogan -->
                         <div class="grid gap-2">
                             <Label for="slogan">Slogan</Label>
-                            <Input id="slogan" v-model="form.slogan" type="text" class="w-full border rounded px-3 py-2" />
+                            <Input id="slogan" v-model="form.slogan" type="text" />
                             <InputError :message="form.errors.slogan" />
                         </div>
 
+                        <!-- Email -->
                         <div class="grid gap-2">
                             <Label for="email">Email</Label>
-                            <Input id="email" v-model="form.email" type="email" class="w-full border rounded px-3 py-2"/>
+                            <Input id="email" v-model="form.email" type="email" />
                             <InputError :message="form.errors.email" />
                         </div>
 
+                        <!-- Phone -->
                         <div class="grid gap-2">
                             <Label for="phone">Phone</Label>
-                            <Input id="phone" v-model="form.phone" type="text" class="w-full border rounded px-3 py-2"/>
+                            <Input id="phone" v-model="form.phone" type="text" />
                             <InputError :message="form.errors.phone" />
                         </div>
 
+                        <!-- Website -->
                         <div class="grid gap-2">
                             <Label for="website">Website</Label>
-                            <Input id="website" v-model="form.website" type="url" class="w-full border rounded px-3 py-2"/>
+                            <Input id="website" v-model="form.website" type="url" />
                             <InputError :message="form.errors.website" />
                         </div>
 
+                        <!-- Timezone -->
                         <div class="grid gap-2">
                             <Label for="timezone">Timezone</Label>
-                            <select id="timezone" v-model="form.timezone"
-                                class="w-full border rounded px-3 py-2">
+                            <select id="timezone" v-model="form.timezone" class="w-full border rounded px-3 py-2">
                                 <option disabled value="">Select Timezone</option>
                                 <option v-for="zone in props.timezones" :key="zone" :value="zone">
                                     {{ zone }}
@@ -103,10 +110,10 @@ const submit = () => {
                             <InputError :message="form.errors.timezone" />
                         </div>
 
+                        <!-- Currency -->
                         <div class="grid gap-2">
                             <Label for="currency">Currency</Label>
-                            <select id="currency" v-model="form.currency"
-                                class="w-full border rounded px-3 py-2">
+                            <select id="currency" v-model="form.currency" class="w-full border rounded px-3 py-2">
                                 <option disabled value="">Select Currency</option>
                                 <option v-for="currency in props.currencies" :key="currency" :value="currency">
                                     {{ currency }}
@@ -115,31 +122,37 @@ const submit = () => {
                             <InputError :message="form.errors.currency" />
                         </div>
 
+                        <!-- Address -->
                         <div class="md:col-span-2 grid gap-2">
                             <Label for="address">Address</Label>
                             <textarea id="address" v-model="form.address" rows="3"
-                            class="w-full border rounded px-3 py-2"></textarea>
+                                class="w-full border rounded px-3 py-2"></textarea>
                             <InputError :message="form.errors.address" />
                         </div>
 
+                        <!-- Logo Upload -->
                         <div class="md:col-span-2 grid gap-2">
-                            <Label for="logo">Logo</Label>
-                            <input id="logo" ref="fileInput" type="file" @change="handleFileChange" accept="image/*"
-                            class="w-1/2 border rounded px-3 py-2" />
-                            <InputError :message="form.errors.logo_path" />
-
-                            <div class="mt-2 flex items-center">
-                                <div v-if="previewUrl" class="w-16 h-16 rounded-md overflow-hidden">
-                                    <img :src="previewUrl" alt="Logo preview" class="w-full h-full object-cover" />
+                            <Label for="logo">Organization Logo</Label>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                <div
+                                    class="w-28 h-28 rounded-md border bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                                    <img v-if="previewUrl" :src="previewUrl" alt="Logo preview"
+                                        class="w-full h-full object-cover" />
+                                    <div v-else class="text-gray-400 text-sm text-center px-2">
+                                        No Logo
+                                    </div>
                                 </div>
-                                <div v-else
-                                    class="w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center text-gray-400">
-                                    No logo
+
+                                <div class="flex-1 w-full">
+                                    <input id="logo" ref="fileInput" type="file" @change="handleFileChange" accept="image/*"
+                                        class="w-full border rounded px-3 py-2 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90" />
+                                    <InputError :message="form.errors.logo_path" />
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Submit -->
                     <div class="flex items-center gap-4">
                         <Button type="submit" :disabled="form.processing">
                             <span v-if="!form.processing">Save Settings</span>

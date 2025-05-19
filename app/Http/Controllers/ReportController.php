@@ -50,7 +50,8 @@ class ReportController extends Controller
 
     private function getFundAllocationData(array $params)
     {
-        return Fund::withSum(['transactions' => function($q) use ($params) {
+        $organization_id = request()->session()->get("organization_id");
+        return Fund::where('organization_id', $organization_id)->withSum(['transactions' => function($q) use ($params) {
             $this->applyDateFilters($q, $params);
         }], 'amount')
             ->having('transactions_sum_amount', '>', 0)
@@ -67,7 +68,8 @@ class ReportController extends Controller
 
     private function getTopDonorsData(array $params)
     {
-        return Donor::withSum(['transactions' => function($q) use ($params) {
+        $organization_id = request()->session()->get("organization_id");
+        return Donor::where('organization_id', $organization_id)->withSum(['transactions' => function($q) use ($params) {
             $this->applyDateFilters($q, $params);
         }], 'amount')
             ->orderByDesc('transactions_sum_amount')
@@ -86,9 +88,10 @@ class ReportController extends Controller
 
     private function getTransactionTrendsData(array $params)
     {
+        $organization_id = request()->session()->get("organization_id");
         $months = $params['months'] ?? 6;
 
-        return Transaction::selectRaw('
+        return Transaction::where('organization_id', $organization_id)->selectRaw('
                 YEAR(created_at) as year,
                 MONTH(created_at) as month,
                 SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) as credit,
@@ -108,7 +111,9 @@ class ReportController extends Controller
 
     private function baseTransactionQuery(array $params)
     {
-        $query = Transaction::query();
+        $organization_id = request()->session()->get("organization_id");
+
+        $query = Transaction::where('organization_id', $organization_id);
         $this->applyDateFilters($query, $params);
         return $query;
     }

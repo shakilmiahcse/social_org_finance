@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
+import vSelect from 'vue-select';
+import 'vue-select/dist/vue-select.css';
+import axios from 'axios';
 
 const toast = useToast();
 
@@ -10,24 +13,21 @@ const props = defineProps({
     transaction: {
         type: Object,
         required: true
-    },
-    donors: {
-        type: Array as () => Array<{ id: number, name: string }>,
-        default: () => []
-    },
-    funds: {
-        type: Array as () => Array<{ id: number, name: string }>,
-        default: () => []
     }
 });
 
 const emit = defineEmits(['close']);
 
 const isOpen = ref(false);
+const donorSearch = ref('');
+const fundSearch = ref('');
+const donors = ref<{ id: number, name: string, phone?: string }[]>([]);
+const funds = ref<{ id: number, name: string }[]>([]);
+
 const form = ref({
     id: null,
-    donor_id: null,
-    fund_id: null,
+    donor_id: null as number | null,
+    fund_id: null as number | null,
     amount: '0.00',
     type: 'credit',
     purpose: '',
@@ -37,13 +37,60 @@ const form = ref({
     status: 'pending',
 });
 
+// Fetch initial data
+const fetchData = async () => {
+    try {
+        const [donorsRes, fundsRes] = await Promise.all([
+            axios.get('/donors/dropdown'),
+            axios.get('/funds/dropdown')
+        ]);
+
+        if (donorsRes.data.success) {
+            donors.value = donorsRes.data.donors;
+        } else {
+            throw new Error(donorsRes.data.message);
+        }
+
+        if (fundsRes.data.success) {
+            funds.value = fundsRes.data.funds;
+        } else {
+            throw new Error(fundsRes.data.message);
+        }
+    } catch (error) {
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || error.message || 'Failed to load data',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    }
+};
+
+// Filter donors based on search
+const filteredDonors = computed(() => {
+    if (!donorSearch.value) return donors.value;
+    const searchTerm = donorSearch.value.toLowerCase();
+    return donors.value.filter(donor =>
+        donor.name.toLowerCase().includes(searchTerm) ||
+        (donor.phone && donor.phone.includes(searchTerm))
+    );
+});
+
+// Filter funds based on search
+const filteredFunds = computed(() => {
+    if (!fundSearch.value) return funds.value;
+    return funds.value.filter(fund =>
+        fund.name.toLowerCase().includes(fundSearch.value.toLowerCase())
+    );
+});
+
 watch(() => props.transaction, (newTransaction) => {
     if (newTransaction) {
         form.value = {
             id: newTransaction.id,
             donor_id: newTransaction.donor_id,
             fund_id: newTransaction.fund_id,
-            amount: newTransaction.amount,
+            amount: parseFloat(newTransaction.amount.toString().replace(/,/g, '')) || 0,
             type: newTransaction.type,
             purpose: newTransaction.purpose,
             payment_method: newTransaction.payment_method,
@@ -55,7 +102,7 @@ watch(() => props.transaction, (newTransaction) => {
 });
 
 const submit = () => {
-    router.put(route('transactions.update', form.value.id), form.value, {
+    router.put(`/transactions/${form.value.id}`, form.value, {
         preserveScroll: true,
         onSuccess: () => {
             toast.success('Transaction updated successfully');
@@ -77,6 +124,10 @@ const closeModal = () => {
     emit('close');
 };
 
+onMounted(() => {
+    fetchData();
+});
+
 defineExpose({
     open: () => isOpen.value = true,
     close: closeModal
@@ -96,95 +147,86 @@ defineExpose({
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <h3 class="text-lg leading-6 font-medium text-gray-900 mb-3">Edit Transaction</h3>
                     <form @submit.prevent="submit">
-                        <!-- Grid for responsive two-column layout -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Donor ID -->
-                            <div class="mb-3">
-                                <label for="donor_id" class="block text-sm font-medium text-gray-700">
-                                    Donor/Raiser
-                                </label>
-                                <select v-model="form.donor_id" id="donor_id"
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="">Select Donor/Raiser</option>
-                                    <option v-for="donor in donors" :key="donor.id" :value="donor.id">
-                                        {{ donor.name }}
-                                    </option>
-                                </select>
+                            <div>
+                                <label class="block font-semibold mb-1">Donor/Raiser</label>
+                                <v-select v-model="form.donor_id" :options="filteredDonors" label="name"
+                                    :reduce="donor => donor.id" placeholder="Search by name or phone" :filterable="false"
+                                    @search="donorSearch = $event" :class="['w-full']">
+                                    <template #option="{ name, phone }">
+                                        <div>
+                                            <span class="truncate">{{ name }}</span>
+                                            <span class="text-gray-500 ml-2 whitespace-nowrap" v-if="phone">
+                                                ({{ phone }})
+                                            </span>
+                                        </div>
+                                    </template>
+                                    <template #selected-option="{ name, phone }">
+                                        <div>
+                                            <span>{{ name }}</span>
+                                            <span class="text-gray-500 ml-2" v-if="phone">
+                                                ({{ phone }})
+                                            </span>
+                                        </div>
+                                    </template>
+                                    <template #no-options>
+                                        No donors found
+                                    </template>
+                                </v-select>
                             </div>
 
-                            <!-- Fund ID -->
-                            <div class="mb-3">
-                                <label for="fund_id" class="block text-sm font-medium text-gray-700">
-                                    Fund <span class="text-red-500">*</span>
-                                </label>
-                                <select v-model="form.fund_id" id="fund_id" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="">Select Fund</option>
-                                    <option v-for="fund in funds" :key="fund.id" :value="fund.id">
-                                        {{ fund.name }}
-                                    </option>
-                                </select>
+                            <div>
+                                <label class="block font-semibold mb-1">Fund <span class="text-red-500">*</span></label>
+                                <v-select v-model="form.fund_id" :options="filteredFunds" label="name"
+                                    :reduce="fund => fund.id" placeholder="Search or select fund" :filterable="false"
+                                    @search="fundSearch = $event" :class="['w-full']" required>
+                                </v-select>
                             </div>
 
-                            <!-- Amount -->
-                            <div class="mb-3">
-                                <label for="amount" class="block text-sm font-medium text-gray-700">
-                                    Amount <span class="text-red-500">*</span>
-                                </label>
-                                <input v-model="form.amount" type="number" step="0.01" id="amount" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <div>
+                                <label class="block font-semibold mb-1">Amount <span class="text-red-500">*</span></label>
+                                <input v-model="form.amount" type="number" step="0.01"
+                                    class="w-full border rounded px-3 py-2" placeholder="Enter Amount" required />
                             </div>
 
-                            <!-- Payment Method -->
-                            <div class="mb-3">
-                                <label for="payment_method" class="block text-sm font-medium text-gray-700">
-                                    Payment Method <span class="text-red-500">*</span>
-                                </label>
-                                <select v-model="form.payment_method" id="payment_method" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <div>
+                                <label class="block font-semibold mb-1">Payment Method <span
+                                        class="text-red-500">*</span></label>
+                                <select v-model="form.payment_method" class="w-full border rounded px-3 py-2" required>
+                                    <option value="">Select Payment Method</option>
                                     <option value="cash">Cash</option>
-                                    <option value="bkash">bKash</option>
                                     <option value="bank">Bank</option>
+                                    <option value="card">Card</option>
+                                    <option value="bkash">bkash</option>
+                                    <option value="nagad">Nagad</option>
+                                    <option value="rocket">Rocket</option>
                                 </select>
                             </div>
 
-                            <!-- Purpose -->
-                            <div class="mb-3">
-                                <label for="purpose" class="block text-sm font-medium text-gray-700">
-                                    Purpose
-                                </label>
-                                <input v-model="form.purpose" type="text" id="purpose"
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <div>
+                                <label class="block font-semibold mb-1">Purpose</label>
+                                <input v-model="form.purpose" type="text" class="w-full border rounded px-3 py-2"
+                                    placeholder="Enter purpose" />
                             </div>
 
-                            <!-- Reference -->
-                            <div class="mb-3">
-                                <label for="reference" class="block text-sm font-medium text-gray-700">
-                                    Reference
-                                </label>
-                                <input v-model="form.reference" type="text" id="reference"
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <div>
+                                <label class="block font-semibold mb-1">Reference</label>
+                                <input v-model="form.reference" type="text" class="w-full border rounded px-3 py-2"
+                                    placeholder="Enter reference" />
                             </div>
 
-                            <!-- Status -->
-                            <div class="mb-3">
-                                <label for="status" class="block text-sm font-medium text-gray-700">
-                                    Status
-                                </label>
-                                <select v-model="form.status" id="status"
-                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                    <option value="pending">Pending</option>
+                            <div>
+                                <label for="status" class="block font-semibold mb-1">Status</label>
+                                <select v-model="form.status" id="status" class="w-full border rounded px-3 py-2">
                                     <option value="completed">Completed</option>
+                                    <option value="pending">Pending</option>
                                     <option value="canceled">Canceled</option>
                                 </select>
                             </div>
 
-                            <!-- Type (Smart Radio Buttons) -->
-                            <div class="mb-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Type <span
-                                        class="text-red-500">*</span></label>
+                            <div>
+                                <label class="block font-semibold mb-1">Type</label>
                                 <div class="flex gap-2">
-                                    <!-- Credit Option -->
                                     <label class="inline-flex items-center">
                                         <input type="radio" value="credit" v-model="form.type" class="hidden peer" />
                                         <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer transition-colors duration-200
@@ -193,7 +235,6 @@ defineExpose({
                                             Credit
                                         </span>
                                     </label>
-                                    <!-- Debit Option -->
                                     <label class="inline-flex items-center">
                                         <input type="radio" value="debit" v-model="form.type" class="hidden peer" />
                                         <span class="px-4 py-2 rounded-full border border-gray-300 text-sm font-medium cursor-pointer transition-colors duration-200
@@ -204,15 +245,12 @@ defineExpose({
                                     </label>
                                 </div>
                             </div>
-
                         </div>
-                        <!-- Note -->
-                        <div class="mb-3">
-                            <label for="note" class="block text-sm font-medium text-gray-700">
-                                Note
-                            </label>
-                            <textarea v-model="form.note" id="note" rows="3"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+
+                        <div class="mt-4">
+                            <label class="block font-semibold mb-1">Note</label>
+                            <textarea v-model="form.note" class="w-full border rounded px-3 py-2"
+                                placeholder="Enter note"></textarea>
                         </div>
                     </form>
                 </div>

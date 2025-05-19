@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import axios from 'axios';
 import Swal from 'sweetalert2';
-import { useToast } from 'vue-toastification'
+import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 const isOpen = ref(false);
+const isLoading = ref(false);
 const form = ref({
     name: '',
     email: '',
@@ -16,22 +17,29 @@ const form = ref({
 
 const emit = defineEmits(['donor-created', 'close']);
 
-const submit = () => {
-    router.post('/donors', form.value, {
-        onSuccess: (response) => {
-            toast.success('Donor added successfully');
-            emit('donor-created', response.props.donor.id); // নতুন ডোনার আইডি ইমিট করুন
+const submit = async () => {
+    try {
+        isLoading.value = true;
+
+        const response = await axios.post('/donors', form.value);
+
+        if (response.data.success) {
+            toast.success(response.data.message);
+            emit('donor-created', response.data.donor.id);
             closeModal();
-        },
-        onError: (errors) => {
-            Swal.fire({
-                title: 'Error!',
-                text: Object.values(errors).join('\n'),
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
+        } else {
+            throw new Error(response.data.message);
         }
-    });
+    } catch (error) {
+        Swal.fire({
+            title: 'Error!',
+            text: error.response?.data?.message || error.message || 'Something went wrong',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    } finally {
+        isLoading.value = false;
+    }
 };
 
 const closeModal = () => {
@@ -109,12 +117,13 @@ defineExpose({
                     </form>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="button" @click="submit"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Save
+                    <button type="button" @click="submit" :disabled="isLoading"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                        <span v-if="isLoading">Saving...</span>
+                        <span v-else>Save</span>
                     </button>
-                    <button type="button" @click="closeModal"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    <button type="button" @click="closeModal" :disabled="isLoading"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
                         Cancel
                     </button>
                 </div>

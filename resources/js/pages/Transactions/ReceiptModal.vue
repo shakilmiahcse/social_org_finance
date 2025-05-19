@@ -1,8 +1,8 @@
 <template>
     <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4">
-            <!-- Background overlay - soft green -->
-            <div class="absolute inset-0 bg-green-100/75 dark:bg-green-900/75" aria-hidden="true" @click="closeModal"></div>
+            <!-- Background overlay -->
+            <div class="absolute inset-0 bg-gray-500 opacity-75" aria-hidden="true" @click="closeModal"></div>
 
             <!-- Modal container -->
             <div
@@ -19,13 +19,13 @@
                     <div class="bg-gradient-to-r from-green-600 to-emerald-700 p-6 text-white relative">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
-                                <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                                <div class="w-14 h-14 bg-[#FAFAFA]/20 rounded-full flex items-center justify-center">
                                     <font-awesome-icon
                                         :icon="['fas', transaction.type === 'credit' ? 'hand-holding-heart' : 'receipt']"
                                         class="text-2xl" />
                                 </div>
                                 <div class="ml-4">
-                                    <h1 class="text-2xl font-bold">{{ transaction.type === 'credit' ? 'অনুদানের রসিদ' :
+                                    <h1 class="text-2xl font-bold">{{ transaction.type === 'credit' ? 'অনুদান রসিদ' :
                                         'পেমেন্ট রসিদ' }}</h1>
                                     <p class="text-green-100">
                                         {{ transaction.type === 'credit'
@@ -49,8 +49,7 @@
                                 class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-green-100/50 dark:border-green-900/50 overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center">
                                 <img
                                 v-if="organization.logo_path"
-                                :src="organization.logo_path"
-                                alt="Organization Logo"
+                                :src="`/${organization.logo_path}`" alt="Logo"
                                 class="object-contain w-full h-full"
                                 />
                                 <font-awesome-icon
@@ -234,9 +233,9 @@ const formatCurrency = (amount: string) => {
 
 const statusColorClasses = (status: string) => {
     const statusMap: Record<string, string> = {
-        completed: 'text-green-600 bg-green-100/50 dark:text-green-400 dark:bg-green-900/30',
-        pending: 'text-yellow-600 bg-yellow-100/50 dark:text-yellow-400 dark:bg-yellow-900/30',
-        canceled: 'text-red-600 bg-red-100/50 dark:text-red-400 dark:bg-red-900/30'
+        completed: 'text-green-600 bg-green-200 dark:text-green-400 dark:bg-green-900/30',
+        pending: 'text-yellow-600 bg-yellow-200 dark:text-yellow-400 dark:bg-yellow-900/30',
+        canceled: 'text-red-600 bg-red-200 dark:text-red-400 dark:bg-red-900/30'
     };
     return statusMap[status.toLowerCase()] || 'text-gray-600 bg-gray-100/50 dark:text-gray-400 dark:bg-gray-900/30';
 };

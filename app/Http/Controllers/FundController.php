@@ -104,6 +104,32 @@ class FundController extends Controller
         }
     }
 
+    public function getDropdown()
+    {
+        $organization_id = request()->session()->get("organization_id");
+        try {
+            $funds = Fund::where('organization_id', $organization_id)->latest()
+                ->get()
+                ->map(function ($fund) {
+                    return [
+                        'id' => $fund->id,
+                        'name' => $fund->name
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'funds' => $funds
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Display the specified resource.
      */

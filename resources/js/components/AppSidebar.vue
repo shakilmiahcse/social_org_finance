@@ -106,18 +106,13 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-// const footerNavItems: NavItem[] = [
-//     {
-//         title: 'Resources',
-//         href: '/resources',
-//         icon: Folder,
-//     },
-//     {
-//         title: 'Documentation',
-//         href: '/docs',
-//         icon: BookOpen,
-//     },
-// ];
+const footerNavItems: NavItem[] = [
+    {
+        title: 'Documentation',
+        href: '/docs',
+        icon: BookOpen,
+    },
+];
 </script>
 
 <template>
@@ -138,10 +133,10 @@ const mainNavItems: NavItem[] = [
             <NavMain :items="mainNavItems" />
         </SidebarContent>
 
-        <!-- <SidebarFooter>
+        <SidebarFooter>
             <NavFooter :items="footerNavItems" />
             <NavUser />
-        </SidebarFooter> -->
+        </SidebarFooter>
     </Sidebar>
     <slot />
 </template>

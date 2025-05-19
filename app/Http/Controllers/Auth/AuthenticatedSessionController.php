@@ -50,6 +50,7 @@ class AuthenticatedSessionController extends Controller
                 'organization_timezone' => $organization->timezone,
                 'organization_currency' => $organization->currency,
                 'organization_is_active' => $organization->is_active,
+                'organization_slogan' => $organization->slogan,
             ]);
         }
 

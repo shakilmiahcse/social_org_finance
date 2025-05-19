@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Illuminate\Support\Str;
 
 class OrgSettingController extends Controller
 {
@@ -40,16 +41,23 @@ class OrgSettingController extends Controller
         $data = $request->except('logo_path');
 
         if ($request->hasFile('logo_path')) {
-            // Store file on the 'public' disk inside 'logos' folder (no 'public/' prefix)
-            $path = $request->file('logo_path')->store('logos', 'public');
-            $data['logo_path'] = Storage::url($path);  // e.g. /storage/logos/filename.png
+            $logo = $request->file('logo_path');
+            $filename = Str::random(40) . '.' . $logo->getClientOriginalExtension();
+            $destinationPath = public_path('uploads/logos');
+
+            // Ensure the directory exists
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            $logo->move($destinationPath, $filename);
 
             // Delete old logo if exists
-            if ($organization->logo_path) {
-                // Remove '/storage' prefix to get storage path
-                $oldPath = str_replace('/storage/', '', $organization->logo_path);
-                Storage::disk('public')->delete($oldPath);
+            if ($organization->logo_path && file_exists(public_path($organization->logo_path))) {
+                @unlink(public_path($organization->logo_path));
             }
+
+            $data['logo_path'] = 'uploads/logos/' . $filename;
         }
 
         $organization->update($data);

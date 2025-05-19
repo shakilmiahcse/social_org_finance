@@ -14,37 +14,37 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $transactions = Transaction::with(['donor', 'fund', 'createdBy'])
+        $organization_id = request()->session()->get("organization_id");
+
+        $transactions = Transaction::where('organization_id', $organization_id)->with(['donor', 'fund', 'createdBy'])
             ->latest()
             ->take(5)
             ->get();
 
         $financialSummary = [
-            'balance' => Transaction::where('type', 'credit')->sum('amount') -
-                        Transaction::where('type', 'debit')->sum('amount'),
-            'total_credit' => Transaction::where('type', 'credit')->sum('amount'),
-            'total_debit' => Transaction::where('type', 'debit')->sum('amount'),
-            'monthly_credit' => Transaction::where('type', 'credit')
+            'balance' => Transaction::where('organization_id', $organization_id)->where('type', 'credit')->sum('amount') -
+                        Transaction::where('organization_id', $organization_id)->where('type', 'debit')->sum('amount'),
+            'total_credit' => Transaction::where('organization_id', $organization_id)->where('type', 'credit')->sum('amount'),
+            'total_debit' => Transaction::where('organization_id', $organization_id)->where('type', 'debit')->sum('amount'),
+            'monthly_credit' => Transaction::where('organization_id', $organization_id)->where('type', 'credit')
                 ->whereMonth('created_at', now()->month)
                 ->sum('amount'),
-            'monthly_debit' => Transaction::where('type', 'debit')
+            'monthly_debit' => Transaction::where('organization_id', $organization_id)->where('type', 'debit')
                 ->whereMonth('created_at', now()->month)
                 ->sum('amount'),
         ];
 
-        $fundAllocation = Fund::withSum('transactions', 'amount')
+        $fundAllocation = Fund::where('organization_id', $organization_id)->withSum('transactions', 'amount')
             ->having('transactions_sum_amount', '>', 0)
             ->orderByDesc('transactions_sum_amount')
             ->get();
 
-        Log::info('fundAllocation: '. $fundAllocation);
-
-        $topDonors = Donor::withSum('transactions', 'amount')
+        $topDonors = Donor::where('organization_id', $organization_id)->withSum('transactions', 'amount')
             ->orderByDesc('transactions_sum_amount')
             ->take(5)
             ->get();
 
-        $transactionTrends = Transaction::selectRaw('
+        $transactionTrends = Transaction::where('organization_id', $organization_id)->selectRaw('
                 YEAR(created_at) as year,
                 MONTH(created_at) as month,
                 SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) as credit,
@@ -55,8 +55,6 @@ class DashboardController extends Controller
             ->orderBy('year')
             ->orderBy('month')
             ->get();
-
-        Log::info('transactionTrends: ' . $transactionTrends);
 
         return Inertia::render('Dashboard', [
             'recentTransactions' => $transactions,
@@ -70,6 +68,7 @@ class DashboardController extends Controller
 
     private function getAlerts($balance)
     {
+        $organization_id = request()->session()->get("organization_id");
         $alerts = [];
 
         if ($balance < 5000) {
@@ -79,7 +78,7 @@ class DashboardController extends Controller
             ];
         }
 
-        $pendingCount = Transaction::where('status', 'pending')->count();
+        $pendingCount = Transaction::where('organization_id', $organization_id)->where('status', 'pending')->count();
         if ($pendingCount > 0) {
             $alerts[] = [
                 'type' => 'info',
