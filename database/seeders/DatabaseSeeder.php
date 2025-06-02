@@ -34,20 +34,38 @@ class DatabaseSeeder extends Seeder
             'adjustments.delete',
         ];
 
+        // Permission গুলো global, তাই শুধু name এবং guard_name দিন
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web',
+            ]);
         }
 
-        // রোল তৈরি
-        $adminRole = Role::create(['name' => 'admin']);
-        $managerRole = Role::create(['name' => 'manager']);
-        $userRole = Role::create(['name' => 'user']);
+        // Role তৈরি - organization_id = 1
+        $adminRole = Role::firstOrCreate([
+            'name' => 'admin',
+            'organization_id' => 1,
+            'guard_name' => 'web',
+        ]);
 
-        // অ্যাডমিনকে সব পারমিশন দিন
-        $adminRole->givePermissionTo(Permission::all());
+        $managerRole = Role::firstOrCreate([
+            'name' => 'manager',
+            'organization_id' => 1,
+            'guard_name' => 'web',
+        ]);
 
-        // ম্যানেজারকে কিছু পারমিশন দিন
-        $managerRole->givePermissionTo([
+        $userRole = Role::firstOrCreate([
+            'name' => 'user',
+            'organization_id' => 1,
+            'guard_name' => 'web',
+        ]);
+
+        // Admin gets all permissions
+        $adminRole->syncPermissions(Permission::all());
+
+        // Manager gets view-only permissions
+        $managerRole->syncPermissions([
             'funds.view',
             'donors.view',
             'transactions.view',

@@ -14,9 +14,11 @@ class OrgSettingController extends Controller
 {
     public function edit()
     {
-        $organization_id = request()->session()->get("organization_id");
+        $user = request()->user();
+        $organization = $user->organization()->first();
+
         return Inertia::render('settings/org', [
-            'organization' => Organization::find($organization_id),
+            'organization' => $organization,
             'timezones' => \DateTimeZone::listIdentifiers(),
             'currencies' => ['USD', 'EUR', 'BDT', 'GBP'],
         ]);

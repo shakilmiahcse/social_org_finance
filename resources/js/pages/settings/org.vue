@@ -153,7 +153,7 @@ const submit = () => {
                     </div>
 
                     <!-- Submit -->
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-4 justify-center">
                         <Button type="submit" :disabled="form.processing">
                             <span v-if="!form.processing">Save Settings</span>
                             <span v-else>Saving...</span>

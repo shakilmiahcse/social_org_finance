@@ -69,7 +69,7 @@ class RegisteredUserController extends Controller
     {
         $userData = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -100,50 +100,49 @@ class RegisteredUserController extends Controller
                 'organization_id' => $organization->id,
             ]);
 
-            // Create default permissions for this organization
-            $permissions = [
-                'funds.create', 'funds.view', 'funds.edit', 'funds.delete',
-                'donors.create', 'donors.view', 'donors.edit', 'donors.delete',
-                'transactions.create', 'transactions.view', 'transactions.edit', 'transactions.delete',
-                'adjustments.create', 'adjustments.view', 'adjustments.edit', 'adjustments.delete',
-            ];
-
-            foreach ($permissions as $permission) {
-                Permission::create([
-                    'name' => $permission,
-                    'organization_id' => $organization->id
-                ]);
-            }
-
             // Create default roles for this organization
-            $adminRole = Role::create([
+            $adminRole = Role::withoutGlobalScope('organization')->create([
                 'name' => 'admin',
-                'organization_id' => $organization->id
+                'organization_id' => $organization->id,
+                'guard_name' => 'web'
             ]);
 
-            $managerRole = Role::create([
+            $managerRole = Role::withoutGlobalScope('organization')->create([
                 'name' => 'manager',
-                'organization_id' => $organization->id
+                'organization_id' => $organization->id,
+                'guard_name' => 'web'
             ]);
 
-            $userRole = Role::create([
+            $userRole = Role::withoutGlobalScope('organization')->create([
                 'name' => 'user',
-                'organization_id' => $organization->id
+                'organization_id' => $organization->id,
+                'guard_name' => 'web'
             ]);
 
             // Assign permissions to roles
-            $adminRole->givePermissionTo(Permission::where('organization_id', $organization->id)->get());
+            $adminRole->givePermissionTo(Permission::get());
 
             $managerRole->givePermissionTo(
-                Permission::where('organization_id', $organization->id)
-                    ->whereIn('name', ['funds.view', 'donors.view', 'transactions.view', 'adjustments.view'])
+                Permission::whereIn('name', ['funds.view', 'donors.view', 'transactions.view', 'adjustments.view'])
                     ->get()
             );
 
-            // Assign admin role to the registering user
-            $user->assignRole($adminRole);
-            $adminRole = Role::firstOrCreate(['name' => 'admin']);
-            $user->assignRole($adminRole);
+            if ($organization) {
+                // Store each organization attribute individually in the session
+                session([
+                    'organization_id' => $organization->id,
+                    'organization_name' => $organization->name,
+                    'organization_email' => $organization->email,
+                    'organization_phone' => $organization->phone,
+                    'organization_address' => $organization->address,
+                    'organization_logo_path' => $organization->logo_path,
+                    'organization_website' => $organization->website,
+                    'organization_timezone' => $organization->timezone,
+                    'organization_currency' => $organization->currency,
+                    'organization_is_active' => $organization->is_active,
+                    'organization_slogan' => $organization->slogan,
+                ]);
+            }
 
             DB::commit();
 
@@ -153,7 +152,6 @@ class RegisteredUserController extends Controller
             Auth::login($user);
 
             return to_route('dashboard');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('User registration failed: ' . $e->getMessage());
@@ -161,7 +159,7 @@ class RegisteredUserController extends Controller
             return back()->withErrors([
                 'message' => 'Registration failed. Please try again. ' .
                     ($e instanceof \Illuminate\Database\QueryException ?
-                     'Database error occurred.' : $e->getMessage())
+                        'Database error occurred.' : $e->getMessage())
             ]);
         }
     }

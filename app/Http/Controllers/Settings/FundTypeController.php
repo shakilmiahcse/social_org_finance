@@ -13,15 +13,16 @@ class FundTypeController extends Controller
 {
     public function edit()
     {
+        $organization_id = request()->session()->get("organization_id");
         // Get the main fund
-        $main_fund = Fund::where('type', 'main')->first();
+        $main_fund = Fund::where('type', 'main')->where('organization_id', $organization_id)->first();
 
         // Check if a main fund is found and get its id
         $main_fund_id = $main_fund ? $main_fund->id : null;
 
         // Pass funds and main_fund_id to the Inertia render
         return Inertia::render('settings/FundType', [
-            'funds' => Fund::whereNull('closed_at')->get(['id', 'name', 'type']),
+            'funds' => Fund::whereNull('closed_at')->where('organization_id', $organization_id)->get(['id', 'name', 'type']),
             'main_fund_id' => $main_fund_id,  // Pass the main fund ID to the component
         ]);
     }
@@ -29,15 +30,17 @@ class FundTypeController extends Controller
 
     public function update(Request $request)
     {
+        $organization_id = request()->session()->get("organization_id");
+
         $request->validate([
             'main_fund_id' => 'required|exists:funds,id',
         ]);
 
         // Set all funds to 'campaign' first
-        Fund::where('type', 'main')->update(['type' => 'campaign']);
+        Fund::where('type', 'main')->where('organization_id', $organization_id)->update(['type' => 'campaign']);
 
         // Then set the selected fund as 'main'
-        Fund::where('id', $request->main_fund_id)->update(['type' => 'main']);
+        Fund::where('id', $request->main_fund_id)->where('organization_id', $organization_id)->update(['type' => 'main']);
 
         return back()->with('status', 'Fund type updated successfully.');
     }

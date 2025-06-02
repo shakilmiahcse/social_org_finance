@@ -31,8 +31,8 @@ class RolePermissionController extends Controller
                 ];
             });
 
-        $permissions = Permission::where('organization_id', $organization_id)
-            ->orderBy('name')
+
+        $permissions = Permission::orderBy('name')
             ->get()
             ->groupBy(function ($item) {
                 return explode('.', $item->name)[0]; // Group by resource (funds, donors, etc.)
@@ -48,9 +48,9 @@ class RolePermissionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,NULL,id,organization_id,'.$request->session()->get('organization_id'),
+            'name' => 'required|string|max:255|unique:roles,name,NULL,id,organization_id,' . $request->session()->get('organization_id'),
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,name,organization_id,'.$request->session()->get('organization_id')
+            'permissions.*' => 'exists:permissions,name'
         ]);
 
         DB::transaction(function () use ($request) {
@@ -70,11 +70,10 @@ class RolePermissionController extends Controller
 
     public function update(Request $request, Role $role)
     {
-
         $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,'.$role->id.',id,organization_id,'.$request->session()->get('organization_id'),
+            'name' => 'required|string|max:255|unique:roles,name,' . $role->id . ',id,organization_id,' . $request->session()->get('organization_id'),
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,name,organization_id,'.$request->session()->get('organization_id')
+            'permissions.*' => 'exists:permissions,name'
         ]);
 
         DB::transaction(function () use ($request, $role) {

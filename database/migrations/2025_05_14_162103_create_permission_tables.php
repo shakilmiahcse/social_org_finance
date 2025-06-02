@@ -23,42 +23,22 @@ return new class extends Migration
         Schema::create($tableNames['permissions'], static function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name');
+            $table->string('guard_name');
+            $table->timestamps();
+
+            $table->unique(['name', 'guard_name'], 'unique_permission_name_guard');
+        });
+
+        Schema::create($tableNames['roles'], static function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name');
             $table->unsignedBigInteger('organization_id');
             $table->string('guard_name');
             $table->timestamps();
 
-            $table->unique(['name', 'guard_name']);
-            $table->foreign('organization_id')->references('id')->on('organizations');
+            $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('cascade');
+            $table->unique(['organization_id', 'name', 'guard_name'], 'unique_org_name_guard');
         });
-
-        if (!Schema::hasTable('roles')) {
-            Schema::create($tableNames['roles'], static function (Blueprint $table) use ($teams, $columnNames) {
-                $table->bigIncrements('id');
-                if ($teams || config('permission.testing')) {
-                    $table->unsignedBigInteger($columnNames['team_foreign_key'])->nullable();
-                    $table->index($columnNames['team_foreign_key'], 'roles_team_foreign_key_index');
-                }
-                $table->string('name');
-                $table->unsignedBigInteger('organization_id');
-                $table->string('guard_name');
-                $table->timestamps();
-
-                if ($teams || config('permission.testing')) {
-                    $table->unique([$columnNames['team_foreign_key'], 'name', 'guard_name']);
-                } else {
-                    $table->unique(['name', 'guard_name']);
-                }
-
-                $table->foreign('organization_id')->references('id')->on('organizations');
-            });
-        } else {
-            Schema::table('roles', function (Blueprint $table) {
-                if (!Schema::hasColumn('roles', 'organization_id')) {
-                    $table->unsignedBigInteger('organization_id')->after('id');
-                    $table->foreign('organization_id')->references('id')->on('organizations');
-                }
-            });
-        }
 
         Schema::create($tableNames['model_has_permissions'], static function (Blueprint $table) use ($tableNames, $columnNames, $pivotPermission, $teams) {
             $table->unsignedBigInteger($pivotPermission);
