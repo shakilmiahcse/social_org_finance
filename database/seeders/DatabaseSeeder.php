@@ -16,6 +16,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            'users.create',
+            'users.view',
+            'users.edit',
+            'users.delete',
             'funds.create',
             'funds.view',
             'funds.edit',
@@ -32,17 +36,18 @@ class DatabaseSeeder extends Seeder
             'adjustments.view',
             'adjustments.edit',
             'adjustments.delete',
+            'settings.update',
+            'reports.view',
+            'dashboard.view',
         ];
 
-        // Permission গুলো global, তাই শুধু name এবং guard_name দিন
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
                 'guard_name' => 'web',
             ]);
         }
-
-        // Role তৈরি - organization_id = 1
+        
         $adminRole = Role::firstOrCreate([
             'name' => 'admin',
             'organization_id' => 1,

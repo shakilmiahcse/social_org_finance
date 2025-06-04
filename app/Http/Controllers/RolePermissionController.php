@@ -72,15 +72,14 @@ class RolePermissionController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name,' . $role->id . ',id,organization_id,' . $request->session()->get('organization_id'),
-            'permissions' => 'array',
+            'permissions' => 'required|array',
             'permissions.*' => 'exists:permissions,name'
         ]);
 
         DB::transaction(function () use ($request, $role) {
-            $role->update([
-                'name' => $request->name,
-                'updated_by' => auth()->id()
-            ]);
+            // শুধু মাত্র আপডেট করা ফিল্ডগুলো সেট করুন
+            $role->name = $request->name;
+            $role->save();
 
             $role->syncPermissions($request->permissions);
         });

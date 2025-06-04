@@ -38,6 +38,15 @@ const props = defineProps({
         }>,
         required: true
     },
+    permissions: {
+        type: Object as () => {
+            view: boolean;
+            edit: boolean;
+            delete: boolean;
+            create: boolean;
+        },
+        required: true
+    }
 });
 
 // Computed
@@ -170,7 +179,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                 <!-- Header with Add button -->
                 <div class="flex justify-between items-center">
                     <h1 class="text-2xl font-bold">Donor List</h1>
-                    <button @click="addDonor"
+                    <button v-if="props.permissions.create" @click="addDonor"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
                         <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
                         Add

@@ -28,7 +28,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('transactions', TransactionController::class);
     Route::resource('adjustments', CampaignAdjustmentController::class);
     Route::resource('users', UserController::class);
-    Route::resource('roles-permissions', RolePermissionController::class);
+    Route::get('roles-permissions', [RolePermissionController::class, 'index'])->name('roles-permissions.index');
+    Route::post('roles-permissions', [RolePermissionController::class, 'store'])->name('roles-permissions.store');
+    Route::get('roles-permissions/create', [RolePermissionController::class, 'create'])->name('roles-permissions.create');
+    Route::get('roles-permissions/{role}', [RolePermissionController::class, 'show'])->name('roles-permissions.show');
+    Route::get('roles-permissions/{role}/edit', [RolePermissionController::class, 'edit'])->name('roles-permissions.edit');
+    Route::put('roles-permissions/{role}', [RolePermissionController::class, 'update'])->name('roles-permissions.update');
+    Route::delete('roles-permissions/{role}', [RolePermissionController::class, 'destroy'])->name('roles-permissions.destroy');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 });

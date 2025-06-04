@@ -34,7 +34,13 @@ class DonorController extends Controller
         });
 
         return Inertia::render('Donors/Index', [
-            'donors' => $donors
+            'donors' => $donors,
+            'permissions' => [
+                'view' => auth()->user()->can('donors.view'),
+                'edit' => auth()->user()->can('donors.edit'),
+                'delete' => auth()->user()->can('donors.delete'),
+                'create' => auth()->user()->can('donors.create'),
+            ],
         ]);
     }
 
