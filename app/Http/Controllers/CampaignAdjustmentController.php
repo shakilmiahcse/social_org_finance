@@ -18,6 +18,9 @@ class CampaignAdjustmentController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->can('adjustments.view')) {
+            abort(403, 'You do not have permission to view campaign adjustments.');
+        }
         $organization_id = request()->session()->get("organization_id");
 
         $adjustments = CampaignAdjustment::with(['createdBy', 'updatedBy'])
@@ -51,6 +54,12 @@ class CampaignAdjustmentController extends Controller
         return Inertia::render('CampaignAdjustments/Index', [
             'adjustments' => $adjustments,
             'funds' => $funds,
+            'permissions' => [
+                'view' => auth()->user()->can('adjustments.view'),
+                'edit' => auth()->user()->can('adjustments.edit'),
+                'delete' => auth()->user()->can('adjustments.delete'),
+                'create' => auth()->user()->can('adjustments.create'),
+            ],
         ]);
     }
 
@@ -59,6 +68,9 @@ class CampaignAdjustmentController extends Controller
      */
     public function create()
     {
+        if (!auth()->user()->can('adjustments.create')) {
+            abort(403, 'You do not have permission to create campaign adjustments.');
+        }
         $organization_id = request()->session()->get("organization_id");
 
         $mainFunds = Fund::getMainDropdown();
@@ -96,6 +108,9 @@ class CampaignAdjustmentController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('adjustments.create')) {
+            abort(403, 'You do not have permission to create campaign adjustments.');
+        }
         $validated = $request->validate([
             'amount' => 'required|numeric|not_in:0',
             'type' => 'required|in:to_campaign,to_main',
@@ -242,6 +257,9 @@ class CampaignAdjustmentController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->can('adjustments.delete')) {
+            abort(403, 'You do not have permission to delete campaign adjustments.');
+        }
         try {
             DB::beginTransaction();
 

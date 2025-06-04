@@ -44,7 +44,14 @@ const props = defineProps<{
     fundAllocation: Array<object>,
     topDonors: Array<object>,
     transactionTrends: Array<object>,
-    alerts: Array<{ type: string, message: string }>
+    alerts: Array<{ type: string, message: string }>,
+    permissions: {
+        viewTransactions: boolean,
+        createTransactions: boolean,
+        viewDonors: boolean,
+        viewFunds: boolean,
+        viewDashboard: boolean
+    },
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -164,7 +171,7 @@ watch(() => [props.fundAllocation, props.transactionTrends], () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-4 space-y-6">
             <!-- Alerts Section -->
-            <div v-if="alerts && alerts.length" class="space-y-2">
+            <div v-if="alerts && alerts.length && props.permissions.viewDashboard" class="space-y-2">
                 <div v-for="(alert, index) in alerts" :key="index" :class="{
                     'bg-yellow-50 border-yellow-400 text-yellow-700': alert.type === 'warning',
                     'bg-blue-50 border-blue-400 text-blue-700': alert.type === 'info'
@@ -174,7 +181,7 @@ watch(() => [props.fundAllocation, props.transactionTrends], () => {
             </div>
 
             <!-- Financial Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div v-if="props.permissions.viewDashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-[#FAFAFA] rounded-xl shadow p-6">
                     <h3 class="text-gray-500 text-sm font-medium">Total Balance</h3>
                     <p class="text-2xl font-bold mt-2">৳{{ financialSummary.balance.toLocaleString() }}</p>
@@ -212,7 +219,7 @@ watch(() => [props.fundAllocation, props.transactionTrends], () => {
             </div>
 
             <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div v-if="props.permissions.viewFunds" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Fund Allocation Pie Chart -->
                 <div class="bg-[#FAFAFA] rounded-xl shadow p-6">
                     <h3 class="text-lg font-semibold mb-4">Fund Allocation</h3>
@@ -226,7 +233,7 @@ watch(() => [props.fundAllocation, props.transactionTrends], () => {
                 </div>
 
                 <!-- Transaction Trends Line Chart -->
-                <div class="bg-[#FAFAFA] rounded-xl shadow p-6">
+                <div v-if="props.permissions.viewTransactions" class="bg-[#FAFAFA] rounded-xl shadow p-6">
                     <h3 class="text-lg font-semibold mb-4">Transaction Trends (Last 6 Months)</h3>
                     <div class="h-64">
                         <Line v-if="transactionTrends && transactionTrends.length" :data="trendChartData"
@@ -239,7 +246,7 @@ watch(() => [props.fundAllocation, props.transactionTrends], () => {
             </div>
 
             <!-- Recent Transactions & Top Donors -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div v-if="props.permissions.viewTransactions" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Recent Transactions -->
                 <div class="bg-[#FAFAFA] rounded-xl shadow">
                     <div class="p-6">
@@ -286,7 +293,7 @@ watch(() => [props.fundAllocation, props.transactionTrends], () => {
                 </div>
 
                 <!-- Top Donors -->
-                <div class="bg-[#FAFAFA] rounded-xl shadow">
+                <div v-if="props.permissions.viewDonors" class="bg-[#FAFAFA] rounded-xl shadow">
                     <div class="p-6">
                         <h3 class="text-lg font-semibold mb-4">Top Donors</h3>
                         <div v-if="topDonors && topDonors.length" class="space-y-4">

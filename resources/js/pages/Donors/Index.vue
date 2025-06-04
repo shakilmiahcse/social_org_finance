@@ -189,23 +189,23 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                 <!-- Top bar -->
                 <div class="flex justify-between items-center flex-wrap gap-2">
                     <div class="flex gap-2">
-                        <button @click="exportToExcel"
+                        <button v-if="props.permissions.view" @click="exportToExcel"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
                             Export Excel
                         </button>
-                        <button @click="exportToPDF"
+                        <button v-if="props.permissions.view" @click="exportToPDF"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
                             Export PDF
                         </button>
                     </div>
                     <div>
-                        <input v-model="searchTerm" type="text" placeholder="Search donors..."
+                        <input v-if="props.permissions.view" v-model="searchTerm" type="text" placeholder="Search donors..."
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                     </div>
                 </div>
 
                 <!-- Donor table -->
-                <div class="overflow-auto">
+                <div v-if="props.permissions.view" class="overflow-auto">
                     <EasyDataTable :headers="headers" :items="filteredDonors" header-text-direction="left"
                         :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination
                         class="custom-table min-w-[700px]">
@@ -226,17 +226,17 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                     class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
                                     <div class="py-1">
                                         <!-- View Button -->
-                                        <button @click.stop="viewDonor(id)"
+                                        <button v-if="props.permissions.view" @click.stop="viewDonor(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'eye']" />
                                             View
                                         </button>
-                                        <button @click.stop="editDonor(id)"
+                                        <button v-if="props.permissions.edit" @click.stop="editDonor(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'pen-to-square']" />
                                             Edit
                                         </button>
-                                        <button @click.stop="deleteDonor(id)"
+                                        <button v-if="props.permissions.delete" @click.stop="deleteDonor(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'trash']" />
                                             Delete

@@ -21,6 +21,14 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
+    permissions: {
+        type: Object as () => {
+            view: boolean;
+            export: boolean;
+            generate: boolean;
+        },
+        required: true
+    }
 });
 
 // Date range picker setup
@@ -159,7 +167,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                 </div>
 
                 <!-- Filters -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div v-if="props.permissions.generate" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
                         <div class="flex items-center gap-2">
@@ -212,7 +220,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                 </div>
 
                 <!-- Action buttons -->
-                <div class="flex justify-between items-center flex-wrap gap-2">
+                <div v-if="props.permissions.export" class="flex justify-between items-center flex-wrap gap-2">
                     <div class="flex gap-2">
                         <button @click="exportReport('excel')" :disabled="isLoading"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
@@ -226,7 +234,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                 </div>
 
                 <!-- Tabs -->
-                <div class="border-b border-gray-200">
+                <div v-if="props.permissions.view" class="border-b border-gray-200">
                     <nav class="-mb-px flex space-x-8">
                         <button @click="activeTab = 'financial_summary'"
                             :class="[activeTab === 'financial_summary' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm']">
@@ -248,7 +256,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                 </div>
 
                 <!-- Tab content -->
-                <div class="pt-4">
+                <div v-if="props.permissions.view" class="pt-4">
                     <!-- Financial Summary -->
                     <div v-if="activeTab === 'financial_summary'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="bg-white p-4 rounded-lg shadow">
@@ -273,7 +281,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                     </div>
 
                     <!-- Fund Allocation -->
-                    <div v-if="activeTab === 'fund_allocation'">
+                    <div v-if="activeTab === 'fund_allocation' && props.permissions.view">
                         <div class="mb-4">
                             <input v-model="searchTerm" type="text" placeholder="Search funds..."
                                 class="border rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
@@ -287,7 +295,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                     </div>
 
                     <!-- Top Donors -->
-                    <div v-if="activeTab === 'top_donors'">
+                    <div v-if="activeTab === 'top_donors' && props.permissions.view">
                         <div class="mb-4">
                             <input v-model="searchTerm" type="text" placeholder="Search donors..."
                                 class="border rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
@@ -301,7 +309,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                     </div>
 
                     <!-- Transaction Trends -->
-                    <div v-if="activeTab === 'transaction_trends'">
+                    <div v-if="activeTab === 'transaction_trends' && props.permissions.view">
                         <div class="bg-white p-4 rounded-lg shadow">
                             <div class="h-64">
                                 <!-- Chart would go here - you can use Chart.js or any other library -->

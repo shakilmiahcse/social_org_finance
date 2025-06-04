@@ -13,16 +13,24 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
+        if (!auth()->user()->can('reports.view')) {
+            abort(403, 'You do not have permission to view reports.');
+        }
         $validated = $this->validateRequest($request);
 
         return Inertia::render('Reports/Index', [
             'initialData' => [
-                'financialSummary' => $this->getFinancialSummaryData($validated),
-                'fundAllocation' => $this->getFundAllocationData($validated),
-                'topDonors' => $this->getTopDonorsData($validated),
-                'transactionTrends' => $this->getTransactionTrendsData($validated),
+            'financialSummary' => $this->getFinancialSummaryData($validated),
+            'fundAllocation' => $this->getFundAllocationData($validated),
+            'topDonors' => $this->getTopDonorsData($validated),
+            'transactionTrends' => $this->getTransactionTrendsData($validated),
             ],
             'filters' => $validated,
+            'permissions' => [
+                'view' => auth()->user()->can('reports.view'),
+                'export' => auth()->user()->can('reports.export'),
+                'generate' => auth()->user()->can('reports.generate'),
+            ],
         ]);
     }
 

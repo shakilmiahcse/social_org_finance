@@ -14,6 +14,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->can('dashboard.view')) {
+            abort(403, 'You do not have permission to view the dashboard.');
+        }
         $organization_id = request()->session()->get("organization_id");
 
         $transactions = Transaction::where('organization_id', $organization_id)->with(['donor', 'fund', 'createdBy'])
@@ -62,7 +65,14 @@ class DashboardController extends Controller
             'fundAllocation' => $fundAllocation,
             'topDonors' => $topDonors,
             'transactionTrends' => $transactionTrends,
-            'alerts' => $this->getAlerts($financialSummary['balance'])
+            'alerts' => $this->getAlerts($financialSummary['balance']),
+            'permissions' => [
+                'viewTransactions' => auth()->user()->can('transactions.view'),
+                'createTransactions' => auth()->user()->can('transactions.view'),
+                'viewDonors' => auth()->user()->can('donors.view'),
+                'viewFunds' => auth()->user()->can('funds.view'),
+                'viewDashboard' => auth()->user()->can('dashboard.view'),
+            ],
         ]);
     }
 

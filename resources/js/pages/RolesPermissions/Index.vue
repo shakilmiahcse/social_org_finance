@@ -36,6 +36,15 @@ const props = defineProps({
     availablePermissions: {
         type: Array,
         required: true
+    },
+    can: {
+        type: Object as () => {
+            view: boolean;
+            create: boolean;
+            edit: boolean;
+            delete: boolean;
+        },
+        required: true
     }
 });
 
@@ -112,7 +121,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                 <!-- Header with Add button -->
                 <div class="flex justify-between items-center">
                     <h1 class="text-2xl font-bold">Role Management</h1>
-                    <button @click="addRole"
+                    <button v-if="props.can.create" @click="addRole"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
                         <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
                         Add
@@ -131,7 +140,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         <template #item-actions="{ id, name }">
                             <div v-if="name !== 'admin'" class="flex items-center space-x-3 my-1">
                                 <!-- Edit Icon Button -->
-                                <button
+                                <button v-if="props.can.edit"
                                     @click.stop="editRole(filteredRoles.find(r => r.id === id))"
                                     class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800"
                                     title="Edit"
@@ -140,7 +149,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                 </button>
 
                                 <!-- Delete Icon Button -->
-                                <button
+                                <button v-if="props.can.delete"
                                     @click.stop="deleteRole(id, name)"
                                     class="w-9 h-9 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-800"
                                     title="Delete"

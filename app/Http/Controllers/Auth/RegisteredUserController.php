@@ -127,6 +127,9 @@ class RegisteredUserController extends Controller
                     ->get()
             );
 
+            // Assign admin role to the registered user
+            $user->assignRole($adminRole);
+
             if ($organization) {
                 // Store each organization attribute individually in the session
                 session([

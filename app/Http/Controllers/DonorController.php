@@ -16,6 +16,9 @@ class DonorController extends Controller
 
     public function index()
     {
+        if (!auth()->user()->can('donors.view')) {
+            abort(403, 'You do not have permission to view donors.');
+        }
         $organization_id = request()->session()->get("organization_id");
 
         $donors = Donor::with(['createdBy', 'updatedBy'])->where('organization_id', $organization_id)->orderBy('created_at', 'desc')->get()->map(function ($donor) {
@@ -57,6 +60,9 @@ class DonorController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('donors.create')) {
+            abort(403, 'You do not have permission to create donors.');
+        }
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
@@ -90,6 +96,9 @@ class DonorController extends Controller
 
     public function getDropdown()
     {
+        if (!auth()->user()->can('donors.view')) {
+            abort(403, 'You do not have permission to view donors.');
+        }
         $organization_id = request()->session()->get("organization_id");
         try {
             $donors = Donor::where('organization_id', $organization_id)->latest()
@@ -136,6 +145,9 @@ class DonorController extends Controller
      */
     public function update(Request $request, Donor $donor)
     {
+        if (!auth()->user()->can('donors.edit')) {
+            abort(403, 'You do not have permission to edit donors.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
@@ -159,6 +171,9 @@ class DonorController extends Controller
      */
     public function destroy(Donor $donor)
     {
+        if (!auth()->user()->can('donors.delete')) {
+            abort(403, 'You do not have permission to delete donors.');
+        }
         $donor->delete();
         return redirect()->route('donors.index')->with('success', 'Donor deleted successfully.');
     }

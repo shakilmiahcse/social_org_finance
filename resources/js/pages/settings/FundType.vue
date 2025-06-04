@@ -8,6 +8,10 @@ import { Button } from '@/components/ui/button';
 const props = defineProps<{
     funds: Array<any>,
     main_fund_id: number | null,
+    can: {
+        view: boolean,
+        update: boolean,
+    },
 }>();
 
 const form = useForm({
@@ -27,7 +31,7 @@ const updateFundType = () => {
 <template>
     <AppLayout>
 
-        <Head title="Fund Type Settings" />
+        <Head v-if="props.can.view" title="Fund Type Settings" />
 
         <SettingsLayout>
             <HeadingSmall title="Select Main Fund"
@@ -49,7 +53,7 @@ const updateFundType = () => {
                     </div>
                 </div>
 
-                <div class="flex justify-center">
+                <div v-if="props.can.update" class="flex justify-center">
                     <Button :disabled="form.processing">Save Settings</Button>
                 </div>
 

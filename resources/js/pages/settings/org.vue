@@ -12,7 +12,14 @@ import { ref } from 'vue';
 const props = defineProps({
     organization: Object,
     timezones: Array,
-    currencies: Array
+    currencies: Array,
+    can: {
+        type: Object as () => {
+            view: boolean;
+            update: boolean;
+        },
+        required: true,
+    },
 });
 
 const form = useForm({
@@ -56,7 +63,7 @@ const submit = () => {
 <template>
     <AppLayout>
 
-        <Head title="Organization Settings" />
+        <Head v-if="props.can.view" title="Organization Settings" />
         <SettingsLayout>
             <div class="space-y-6">
                 <HeadingSmall title="Organization Settings" description="Update your organization's basic details." />
@@ -153,7 +160,7 @@ const submit = () => {
                     </div>
 
                     <!-- Submit -->
-                    <div class="flex items-center gap-4 justify-center">
+                    <div v-if="props.can.update" class="flex items-center gap-4 justify-center">
                         <Button type="submit" :disabled="form.processing">
                             <span v-if="!form.processing">Save Settings</span>
                             <span v-else>Saving...</span>

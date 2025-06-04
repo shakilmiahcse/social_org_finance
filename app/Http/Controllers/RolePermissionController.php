@@ -15,6 +15,9 @@ class RolePermissionController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->can('roles.view')) {
+            abort(403, 'You do not have permission to view roles and permissions.');
+        }
         $organization_id = request()->session()->get("organization_id");
 
         $roles = Role::with(['permissions'])
@@ -41,12 +44,21 @@ class RolePermissionController extends Controller
         return Inertia::render('RolesPermissions/Index', [
             'roles' => $roles,
             'permissions' => $permissions,
-            'availablePermissions' => $permissions->flatten()->pluck('name')
+            'availablePermissions' => $permissions->flatten()->pluck('name'),
+            'can' => [
+                'view' => auth()->user()->can('roles.view'),
+                'create' => auth()->user()->can('roles.create'),
+                'edit' => auth()->user()->can('roles.edit'),
+                'delete' => auth()->user()->can('roles.delete'),
+            ],
         ]);
     }
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('roles.create')) {
+            abort(403, 'You do not have permission to create roles.');
+        }
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name,NULL,id,organization_id,' . $request->session()->get('organization_id'),
             'permissions' => 'array',
@@ -70,6 +82,9 @@ class RolePermissionController extends Controller
 
     public function update(Request $request, Role $role)
     {
+        if (!auth()->user()->can('roles.edit')) {
+            abort(403, 'You do not have permission to edit roles.');
+        }
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name,' . $role->id . ',id,organization_id,' . $request->session()->get('organization_id'),
             'permissions' => 'required|array',
@@ -89,6 +104,9 @@ class RolePermissionController extends Controller
 
     public function destroy(Role $role)
     {
+        if (!auth()->user()->can('roles.delete')) {
+            abort(403, 'You do not have permission to delete roles.');
+        }
         // Prevent deletion of admin role
         if ($role->name === 'admin') {
             return redirect()->back()

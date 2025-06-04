@@ -36,6 +36,15 @@ const props = defineProps({
     funds: {
         type: Array,
         required: true
+    },
+    permissions: {
+        type: Object as () => {
+            view: boolean;
+            edit: boolean;
+            delete: boolean;
+            create: boolean;
+        },
+        required: true
     }
 });
 
@@ -162,7 +171,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                 <div class="flex justify-between items-center">
                     <h1 class="text-2xl font-bold">Campaign Adjustments List</h1>
-                    <Link href="/adjustments/create"
+                    <Link v-if="props.permissions.create" href="/adjustments/create"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
                     <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
                     Add
@@ -171,11 +180,11 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 
                 <div class="flex justify-between items-center flex-wrap gap-2">
                     <div class="flex gap-2">
-                        <button @click="exportToExcel"
+                        <button v-if="props.permissions.view" @click="exportToExcel"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
                             Export Excel
                         </button>
-                        <button @click="exportToPDF"
+                        <button v-if="props.permissions.view" @click="exportToPDF"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition">
                             Export PDF
                         </button>
@@ -185,7 +194,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                     </div>
                 </div>
-                <div class="overflow-auto">
+                <div v-if="props.permissions.view" class="overflow-auto">
                     <EasyDataTable :headers="headers" :items="filteredAdjustments" header-text-direction="left"
                         :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination
                         class="custom-table min-w-[700px]">
@@ -211,12 +220,12 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                 <div :ref="el => $refs[`dropdown-${id}`] = el"
                                     class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
                                     <div class="py-1">
-                                        <button @click.stop="viewAdjustment(id)"
+                                        <button v-if="props.permissions.view" @click.stop="viewAdjustment(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'eye']" />
                                             View
                                         </button>
-                                        <button @click.stop="deleteAdjustment(id)"
+                                        <button v-if="props.permissions.delete" @click.stop="deleteAdjustment(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'trash']" />
                                             Delete

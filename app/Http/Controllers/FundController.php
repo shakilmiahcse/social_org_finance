@@ -16,6 +16,9 @@ class FundController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->can('funds.view')) {
+            abort(403, 'You do not have permission to view funds.');
+        }
         $organization_id = request()->session()->get("organization_id");
 
         $funds = Fund::with(['createdBy', 'updatedBy'])
@@ -60,7 +63,13 @@ class FundController extends Controller
             });
 
         return Inertia::render('Funds/Index', [
-            'funds' => $funds
+            'funds' => $funds,
+            'permissions' => [
+                'view' => auth()->user()->can('funds.view'),
+                'edit' => auth()->user()->can('funds.edit'),
+                'delete' => auth()->user()->can('funds.delete'),
+                'create' => auth()->user()->can('funds.create'),
+            ],
         ]);
     }
 
@@ -77,6 +86,9 @@ class FundController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('funds.create')) {
+            abort(403, 'You do not have permission to create funds.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -106,6 +118,9 @@ class FundController extends Controller
 
     public function getDropdown()
     {
+        if (!auth()->user()->can('funds.view')) {
+            abort(403, 'You do not have permission to view funds.');
+        }
         $organization_id = request()->session()->get("organization_id");
         try {
             $funds = Fund::where('organization_id', $organization_id)->latest()
@@ -151,6 +166,9 @@ class FundController extends Controller
      */
     public function update(Request $request, Fund $fund)
     {
+        if (!auth()->user()->can('funds.edit')) {
+            abort(403, 'You do not have permission to edit funds.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -182,6 +200,9 @@ class FundController extends Controller
 
     public function destroy(Fund $fund)
     {
+        if (!auth()->user()->can('funds.delete')) {
+            abort(403, 'You do not have permission to delete funds.');
+        }
         $fund->delete();
         return redirect()->route('funds.index')->with('success', 'Funds deleted successfully.');
     }

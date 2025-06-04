@@ -9,6 +9,10 @@ use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
 {
+    protected function isSuperAdmin($user): bool
+    {
+        return $user->email === config('app.super_admin_email');
+    }
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -49,8 +53,13 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user ? [
                     ...$user->toArray(),
                     'roles' => $user->getRoleNames(),
-                    'permissions' => $user->getAllPermissions()->pluck('name'),
-                    'can' => $user->getAllPermissions()->pluck('name')->toArray(),
+                    'permissions' => $this->isSuperAdmin($user)
+                        ? collect(\Spatie\Permission\Models\Permission::pluck('name'))
+                        : $user->getAllPermissions()->pluck('name'),
+                    'can' => $this->isSuperAdmin($user)
+                        ? \Spatie\Permission\Models\Permission::pluck('name')->toArray()
+                        : $user->getAllPermissions()->pluck('name')->toArray(),
+                    'is_super_admin' => $this->isSuperAdmin($user),
                 ] : null,
             ],
             'ziggy' => [

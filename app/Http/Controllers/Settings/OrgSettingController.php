@@ -14,6 +14,9 @@ class OrgSettingController extends Controller
 {
     public function edit()
     {
+        if (!auth()->user()->can('settings.view')) {
+            abort(403, 'You do not have permission to view organization settings.');
+        }
         $user = request()->user();
         $organization = $user->organization()->first();
 
@@ -21,11 +24,18 @@ class OrgSettingController extends Controller
             'organization' => $organization,
             'timezones' => \DateTimeZone::listIdentifiers(),
             'currencies' => ['USD', 'EUR', 'BDT', 'GBP'],
+            'can' => [
+                'view' => auth()->user()->can('settings.view'),
+                'update' => auth()->user()->can('settings.update'),
+            ],
         ]);
     }
 
     public function update(Request $request)
     {
+        if (!auth()->user()->can('settings.update')) {
+            abort(403, 'You do not have permission to update organization settings.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'logo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:50|dimensions:max_width=500,max_height=500',

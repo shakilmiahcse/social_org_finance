@@ -38,6 +38,15 @@ const props = defineProps({
     availableRoles: {
         type: Array,
         required: true
+    },
+    can: {
+        type: Object as () => {
+            view: boolean;
+            create: boolean;
+            edit: boolean;
+            delete: boolean;
+        },
+        required: true
     }
 });
 
@@ -101,20 +110,20 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
 
 <template>
-    <Head title="User Management" />
+    <Head v-if="props.can.view" title="User Management" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-4 space-y-4">
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                 <div class="flex justify-between items-center">
                     <h1 class="text-2xl font-bold">User Management</h1>
-                    <button @click="addUser"
+                    <button v-if="props.can.create" @click="addUser"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
                         <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
                         Add
                     </button>
                 </div>
 
-                <div class="flex justify-end">
+                <div v-if="props.can.view" class="flex justify-end">
                     <input v-model="searchTerm" type="text" placeholder="Search users..."
                         class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                 </div>
@@ -126,12 +135,12 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         </template>
                         <template #item-actions="{ id, name, roles }">
                             <div class="flex items-center space-x-3 my-1" v-if="!roles.includes('admin')">
-                                <button @click.stop="editUser(filteredUsers.find(u => u.id === id))"
+                                <button v-if="props.can.edit" @click.stop="editUser(filteredUsers.find(u => u.id === id))"
                                     class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800"
                                     title="Edit">
                                     <font-awesome-icon :icon="['fas', 'pen-to-square']" />
                                 </button>
-                                <button @click.stop="deleteUser(id, name)"
+                                <button v-if="props.can.delete" @click.stop="deleteUser(id, name)"
                                     class="w-9 h-9 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-800"
                                     title="Delete">
                                     <font-awesome-icon :icon="['fas', 'trash']" />

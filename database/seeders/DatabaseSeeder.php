@@ -36,9 +36,16 @@ class DatabaseSeeder extends Seeder
             'adjustments.view',
             'adjustments.edit',
             'adjustments.delete',
+            'settings.view',
             'settings.update',
             'reports.view',
+            'reports.export',
+            'reports.generate',
             'dashboard.view',
+            'roles.create',
+            'roles.view',
+            'roles.edit',
+            'roles.delete'
         ];
 
         foreach ($permissions as $permission) {
@@ -47,7 +54,7 @@ class DatabaseSeeder extends Seeder
                 'guard_name' => 'web',
             ]);
         }
-        
+
         $adminRole = Role::firstOrCreate([
             'name' => 'admin',
             'organization_id' => 1,

@@ -18,6 +18,9 @@ class TransactionController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->can('transactions.view')) {
+            abort(403, 'You do not have permission to view transactions.');
+        }
         $organization_id = request()->session()->get("organization_id");
 
         $transactions = Transaction::with(['createdBy', 'updatedBy'])
@@ -65,6 +68,12 @@ class TransactionController extends Controller
                 'slogan' => session('organization_slogan'),
                 'logo_path' => session('organization_logo_path'),
             ],
+            'permissions' => [
+                'view' => auth()->user()->can('transactions.view'),
+                'create' => auth()->user()->can('transactions.create'),
+                'edit' => auth()->user()->can('transactions.edit'),
+                'delete' => auth()->user()->can('transactions.delete'),
+            ],
         ]);
     }
 
@@ -73,6 +82,9 @@ class TransactionController extends Controller
      */
     public function create()
     {
+        if (!auth()->user()->can('transactions.create')) {
+            abort(403, 'You do not have permission to create transactions.');
+        }
         $donors = Donor::getDropdown();
         $funds = Fund::getDropdown();
 
@@ -87,6 +99,9 @@ class TransactionController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('transactions.create')) {
+            abort(403, 'You do not have permission to create transactions.');
+        }
         // Validate incoming request data (exclude txn_id)
         $validated = $request->validate([
             'donor_id' => 'nullable|exists:donors,id',
@@ -133,6 +148,9 @@ class TransactionController extends Controller
 
     public function createIncome()
     {
+        if (!auth()->user()->can('transactions.create')) {
+            abort(403, 'You do not have permission to create transactions.');
+        }
         $donors = Donor::getDropdown();
         $funds = Fund::getDropdown();
 
@@ -144,11 +162,17 @@ class TransactionController extends Controller
 
     public function storeIncome(Request $request)
     {
+        if (!auth()->user()->can('transactions.create')) {
+            abort(403, 'You do not have permission to create transactions.');
+        }
         return $this->storeTransaction($request, 'credit');
     }
 
     public function createExpense()
     {
+        if (!auth()->user()->can('transactions.create')) {
+            abort(403, 'You do not have permission to create transactions.');
+        }
         $donors = Donor::getDropdown();
         $funds = Fund::getDropdown();
 
@@ -160,11 +184,17 @@ class TransactionController extends Controller
 
     public function storeExpense(Request $request)
     {
+        if (!auth()->user()->can('transactions.create')) {
+            abort(403, 'You do not have permission to create transactions.');
+        }
         return $this->storeTransaction($request, 'debit');
     }
 
     private function storeTransaction(Request $request, string $type)
     {
+        if (!auth()->user()->can('transactions.create')) {
+            abort(403, 'You do not have permission to create transactions.');
+        }
         // Validate incoming request data (exclude txn_id)
         $validated = $request->validate([
             'donor_id' => 'nullable|exists:donors,id',
@@ -228,6 +258,9 @@ class TransactionController extends Controller
      */
     public function update(Request $request, Transaction $transaction)
     {
+        if (!auth()->user()->can('transactions.edit')) {
+            abort(403, 'You do not have permission to edit transactions.');
+        }
         $validated = $request->validate([
             'donor_id' => 'nullable|exists:donors,id',
             'fund_id' => 'required|exists:funds,id',
@@ -253,6 +286,9 @@ class TransactionController extends Controller
      */
     public function destroy(Transaction $transaction)
     {
+        if (!auth()->user()->can('transactions.delete')) {
+            abort(403, 'You do not have permission to delete transactions.');
+        }
         // Check if the transaction exists
         if (!$transaction) {
             return redirect()->back()->with('error', 'Transaction not found');

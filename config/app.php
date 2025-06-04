@@ -28,6 +28,17 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+
+    /**
+     * The email address of the super administrator.
+     *
+     * This value is retrieved from the environment variable 'SUPER_ADMIN_EMAIL'.
+     * If the environment variable is not set, it defaults to 'superadmin@example.com'.
+     * Used for administrative notifications and privileged access.
+     */
+
+    'super_admin_email' => env('SUPER_ADMIN_EMAIL', 'shakilmiahr55@gmail.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode

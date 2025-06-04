@@ -15,6 +15,9 @@ class UserController extends Controller
 {
     public function index()
     {
+        if (!auth()->user()->can('users.view')) {
+            abort(403, 'You do not have permission to view users.');
+        }
         $organization_id = request()->session()->get("organization_id");
 
         $users = User::with(['roles'])
@@ -45,12 +48,21 @@ class UserController extends Controller
         return Inertia::render('Users/Index', [
             'users' => $users,
             'roles' => $roles,
-            'availableRoles' => $roles->pluck('name')
+            'availableRoles' => $roles->pluck('name'),
+            'can' => [
+                'view' => auth()->user()->can('users.view'),
+                'create' => auth()->user()->can('users.create'),
+                'edit' => auth()->user()->can('users.edit'),
+                'delete' => auth()->user()->can('users.delete'),
+            ],
         ]);
     }
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('users.create')) {
+            abort(403, 'You do not have permission to create users.');
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,NULL,id,organization_id,'.$request->session()->get('organization_id'),
@@ -77,6 +89,9 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        if (!auth()->user()->can('users.edit')) {
+            abort(403, 'You do not have permission to edit users.');
+        }
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id.',id,organization_id,'.$request->session()->get('organization_id'),
@@ -107,6 +122,9 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        if (!auth()->user()->can('users.delete')) {
+            abort(403, 'You do not have permission to delete users.');
+        }
         // Prevent deletion of current user
         if ($user->id === auth()->id()) {
             return redirect()->back()
