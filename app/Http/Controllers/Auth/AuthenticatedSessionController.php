@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Permission;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,6 +53,15 @@ class AuthenticatedSessionController extends Controller
                 'organization_is_active' => $organization->is_active,
                 'organization_slogan' => $organization->slogan,
             ]);
+        }
+
+        // Assign all permissions to admin role if not already assigned
+        if ($user->hasRole('admin')) {
+            $adminRole = $user->roles()->where('name', 'admin')->first();
+
+            if ($adminRole && $adminRole->permissions()->count() === 0) {
+                $adminRole->givePermissionTo(Permission::all());
+            }
         }
 
         return redirect()->intended(route('dashboard', absolute: false));

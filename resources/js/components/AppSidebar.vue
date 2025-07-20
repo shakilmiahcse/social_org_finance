@@ -47,10 +47,6 @@ const mainNavItems: NavItem[] = [
                 href: '/transactions',
             },
             {
-                title: 'Add Transaction',
-                href: '/transactions/create',
-            },
-            {
                 title: 'Income',
                 href: '/incomes/create',
             },

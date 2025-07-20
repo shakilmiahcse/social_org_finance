@@ -41,8 +41,6 @@ class RegisteredUserController extends Controller
     {
         $validated = $request->validate([
             'org_name' => 'required|string|max:255',
-            'org_email' => 'required|string|email|max:255|unique:organizations,email',
-            'org_phone' => 'nullable|string|max:20',
             'org_address' => 'nullable|string|max:500',
         ]);
 
@@ -85,8 +83,6 @@ class RegisteredUserController extends Controller
             // Create organization
             $organization = Organization::create([
                 'name' => $orgData['org_name'],
-                'email' => $orgData['org_email'],
-                'phone' => $orgData['org_phone'] ?? null,
                 'address' => $orgData['org_address'] ?? null,
                 'timezone' => 'Asia/Dhaka',
                 'currency' => 'BDT',

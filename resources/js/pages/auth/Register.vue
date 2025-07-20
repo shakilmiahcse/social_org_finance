@@ -24,8 +24,6 @@ const props = defineProps({
 // Organization form - initialize with session data if available
 const orgForm = useForm({
     org_name: props.orgData.org_name || '',
-    org_email: props.orgData.org_email || '',
-    org_phone: props.orgData.org_phone || '',
     org_address: props.orgData.org_address || '',
 });
 
@@ -108,20 +106,6 @@ const submitUser = () => {
                     <Input id="org_name" type="text" required autofocus v-model="orgForm.org_name"
                         placeholder="Your organization name" :disabled="orgForm.processing" />
                     <InputError :message="orgForm.errors.org_name" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="org_email">Organization Email *</Label>
-                    <Input id="org_email" type="email" required v-model="orgForm.org_email"
-                        placeholder="organization@example.com" :disabled="orgForm.processing" />
-                    <InputError :message="orgForm.errors.org_email" />
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="org_phone">Organization Phone</Label>
-                    <Input id="org_phone" type="tel" v-model="orgForm.org_phone" placeholder="+880XXXXXXXXXX"
-                        :disabled="orgForm.processing" />
-                    <InputError :message="orgForm.errors.org_phone" />
                 </div>
 
                 <div class="grid gap-2">

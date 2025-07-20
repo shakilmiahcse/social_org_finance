@@ -191,11 +191,16 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                 <div class="flex justify-between items-center">
                     <h1 class="text-2xl font-bold">Transaction List</h1>
-                    <Link href="/transactions/create"
-                        class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
-                    <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
-                    Add
-                    </Link>
+                    <div class="space-x-2">
+                        <Link v-for="link in [
+                            { title: 'Income', href: '/incomes/create' },
+                            { title: 'Expense', href: '/expenses/create' },
+                        ]" :key="link.href" :href="link.href"
+                            class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition items-center">
+                            <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
+                            {{ link.title }}
+                        </Link>
+                    </div>
                 </div>
 
                 <div class="flex justify-between items-center flex-wrap gap-2">

@@ -14,45 +14,52 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        if (!auth()->user()->can('dashboard.view')) {
-            abort(403, 'You do not have permission to view the dashboard.');
-        }
         $organization_id = request()->session()->get("organization_id");
 
-        $transactions = Transaction::where('organization_id', $organization_id)->with(['donor', 'fund', 'createdBy'])
+        // Recent transactions with eager loading
+        $transactions = Transaction::where('organization_id', $organization_id)->where('status', 'completed')
+            ->with(['donor', 'fund', 'createdBy'])
             ->latest()
             ->take(5)
             ->get();
 
+        // Base query to clone from
+        $baseQuery = Transaction::where('organization_id', $organization_id)->where('status', 'completed');
+
+        // Clone base query for summaries
+        $creditQuery = (clone $baseQuery)->where('type', 'credit');
+        $debitQuery = (clone $baseQuery)->where('type', 'debit');
+
         $financialSummary = [
-            'balance' => Transaction::where('organization_id', $organization_id)->where('type', 'credit')->sum('amount') -
-                        Transaction::where('organization_id', $organization_id)->where('type', 'debit')->sum('amount'),
-            'total_credit' => Transaction::where('organization_id', $organization_id)->where('type', 'credit')->sum('amount'),
-            'total_debit' => Transaction::where('organization_id', $organization_id)->where('type', 'debit')->sum('amount'),
-            'monthly_credit' => Transaction::where('organization_id', $organization_id)->where('type', 'credit')
-                ->whereMonth('created_at', now()->month)
-                ->sum('amount'),
-            'monthly_debit' => Transaction::where('organization_id', $organization_id)->where('type', 'debit')
-                ->whereMonth('created_at', now()->month)
-                ->sum('amount'),
+            'balance' => $creditQuery->sum('amount') - $debitQuery->sum('amount'),
+            'total_credit' => (clone $creditQuery)->sum('amount'),
+            'total_debit' => (clone $debitQuery)->sum('amount'),
+            'monthly_credit' => (clone $creditQuery)->whereMonth('created_at', now()->month)->sum('amount'),
+            'monthly_debit' => (clone $debitQuery)->whereMonth('created_at', now()->month)->sum('amount'),
         ];
 
-        $fundAllocation = Fund::where('organization_id', $organization_id)->withSum('transactions', 'amount')
+        // Fund allocation summary
+        $fundAllocation = Fund::where('organization_id', $organization_id)
+            ->withSum('transactions', 'amount')
             ->having('transactions_sum_amount', '>', 0)
             ->orderByDesc('transactions_sum_amount')
             ->get();
 
-        $topDonors = Donor::where('organization_id', $organization_id)->withSum('transactions', 'amount')
+        // Top 5 donors
+        $topDonors = Donor::where('organization_id', $organization_id)
+            ->withSum('transactions', 'amount')
             ->orderByDesc('transactions_sum_amount')
             ->take(5)
             ->get();
 
-        $transactionTrends = Transaction::where('organization_id', $organization_id)->selectRaw('
-                YEAR(created_at) as year,
-                MONTH(created_at) as month,
-                SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) as credit,
-                SUM(CASE WHEN type = "debit" THEN amount ELSE 0 END) as debit
-            ')
+        // Transaction trends for the past 6 months
+        $transactionTrends = (clone $baseQuery)
+            ->selectRaw('
+            YEAR(created_at) as year,
+            MONTH(created_at) as month,
+            SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) as credit,
+            SUM(CASE WHEN type = "debit" THEN amount ELSE 0 END) as debit
+        ')
             ->where('created_at', '>=', now()->subMonths(6))
             ->groupBy('year', 'month')
             ->orderBy('year')
@@ -75,6 +82,7 @@ class DashboardController extends Controller
             ],
         ]);
     }
+
 
     private function getAlerts($balance)
     {
