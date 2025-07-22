@@ -2,10 +2,12 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
-import { useToast } from 'vue-toastification'
+import { useToast } from 'vue-toastification';
+import axios from 'axios';
 
 const toast = useToast();
 const isOpen = ref(false);
+const isLoading = ref(false);
 const form = ref({
     name: '',
     email: '',
@@ -14,28 +16,51 @@ const form = ref({
     address: '',
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'donor-created']);
 
-const submit = () => {
-    router.post('/donors', form.value, {
-        onSuccess: () => {
-            toast.success('Donor added successfully')
+const submit = async () => {
+    try {
+        isLoading.value = true;
+        
+        // Use axios instead of Inertia's router.post
+        const response = await axios.post('/donors', form.value);
+        
+        if (response.data.success) {
+            toast.success(response.data.message || 'Donor added successfully');
+            emit('donor-created', response.data.donor);
             closeModal();
-        },
-        onError: (errors) => {
+            
+            // Refresh the parent page to show the new donor
+            router.reload({ only: ['donors'] });
+        } else {
+            throw new Error(response.data.message || 'Failed to create donor');
+        }
+    } catch (error) {
+        if (error.response?.data?.errors) {
+            // Handle validation errors
+            Swal.fire({
+                title: 'Validation Error',
+                text: Object.values(error.response.data.errors).join('\n'),
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            // Handle other errors
             Swal.fire({
                 title: 'Error!',
-                text: Object.values(errors).join('\n'),
+                text: error.response?.data?.message || error.message || 'Something went wrong',
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
         }
-    });
+    } finally {
+        isLoading.value = false;
+    }
 };
 
 const closeModal = () => {
     isOpen.value = false;
-    form.value = { name: '', email: '', phone: '', address: '' };
+    form.value = { name: '', email: '', phone: '', blood_group: '', address: '' };
     emit('close');
 };
 
@@ -67,17 +92,20 @@ defineExpose({
                                 Name <span class="text-red-500">*</span>
                             </label>
                             <input v-model="form.name" type="text" id="name" required
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter donor's Name">
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="Enter donor's Name">
                         </div>
                         <div class="mb-4">
                             <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                             <input v-model="form.email" type="email" id="email"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter donor's Email">
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="Enter donor's Email">
                         </div>
                         <div class="mb-4">
                             <label for="phone" class="block text-sm font-medium text-gray-700">Phone</label>
                             <input v-model="form.phone" type="tel" id="phone"
-                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter donor's Phone">
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="Enter donor's Phone">
                         </div>
                         <div class="mb-4">
                             <label for="blood_group" class="block text-sm font-medium text-gray-700">
@@ -105,12 +133,13 @@ defineExpose({
                     </form>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="button" @click="submit"
-                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Save
+                    <button type="button" @click="submit" :disabled="isLoading"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                        <span v-if="isLoading">Saving...</span>
+                        <span v-else>Save</span>
                     </button>
-                    <button type="button" @click="closeModal"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    <button type="button" @click="closeModal" :disabled="isLoading"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
                         Cancel
                     </button>
                 </div>

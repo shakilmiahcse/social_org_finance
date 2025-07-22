@@ -23,6 +23,8 @@ const viewDonorModal = ref();
 const editDonorModal = ref();
 const selectedDonor = ref(null);
 const $refs = ref<Record<string, HTMLElement>>({});
+const isFilterExpanded = ref(false);
+const selectedBloodGroups = ref<string[]>([]);
 
 // Props
 const props = defineProps({
@@ -50,11 +52,33 @@ const props = defineProps({
 });
 
 // Computed
-const filteredDonors = computed(() =>
-    props.donors.filter(d =>
-        d.name.toLowerCase().includes(searchTerm.value.toLowerCase())
-    )
-);
+const bloodGroups = computed(() => {
+  return [...new Set(props.donors.map(d => d.blood_group))].filter(Boolean);
+});
+
+const filteredDonors = computed(() => {
+  let result = props.donors;
+  
+  // Apply search filter
+  // Apply search filter
+  if (searchTerm.value) {
+    const term = searchTerm.value.toLowerCase();
+    result = result.filter(d => 
+      d.name.toLowerCase().includes(term) ||
+      (d.email && d.email.toLowerCase().includes(term)) ||
+      (d.phone && d.phone.toLowerCase().includes(term))
+    );
+  }
+  
+  // Apply blood group filter if any selected
+  if (selectedBloodGroups.value.length > 0) {
+    result = result.filter(d => 
+      selectedBloodGroups.value.includes(d.blood_group)
+    );
+  }
+  
+  return result;
+});
 
 // Constants
 const breadcrumbs: BreadcrumbItem[] = [
@@ -74,12 +98,11 @@ const headers = [
 // Methods
 const addDonor = () => addDonorModal.value.open();
 
-// Add view method
 const viewDonor = (id: number) => {
     const donor = props.donors.find(d => d.id === id);
     if (donor) {
         selectedDonor.value = donor;
-        viewDonorModal.value.open(); // call exposed open() method on the view modal
+        viewDonorModal.value.open();
     }
 };
 
@@ -124,7 +147,6 @@ const handleClickOutside = (event: MouseEvent) => {
 const toggleDropdown = (id: number) => {
     const dropdown = $refs.value[`dropdown-${id}`];
     if (dropdown) {
-        // Close all other dropdowns first
         props.donors.forEach(d => {
             if (d.id !== id && $refs.value[`dropdown-${d.id}`]) {
                 $refs.value[`dropdown-${d.id}`].classList.add('hidden');
@@ -134,7 +156,6 @@ const toggleDropdown = (id: number) => {
     }
 };
 
-// Export functions
 const exportToExcel = () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Donors');
@@ -167,6 +188,7 @@ onMounted(() => {
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
+
 const rowsPerPage = ref(20);
 const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
@@ -178,7 +200,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                 <!-- Header with Add button -->
                 <div class="flex justify-between items-center">
-                    <h1 class="text-2xl font-bold">Donor List</h1>
+                    <h1 class="text-2xl font-bold">Donor/Raiser List</h1>
                     <button v-if="props.permissions.create" @click="addDonor"
                         class="bg-green-500 hover:bg-green-600 text-white text-sm px-3 py-1.5 rounded transition flex items-center">
                         <font-awesome-icon :icon="['fas', 'plus']" class="mr-1" />
@@ -198,9 +220,35 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                             Export PDF
                         </button>
                     </div>
-                    <div>
+                    <div class="flex gap-2">
                         <input v-if="props.permissions.view" v-model="searchTerm" type="text" placeholder="Search donors..."
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
+                        <button @click="isFilterExpanded = !isFilterExpanded" 
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition flex items-center">
+                            <font-awesome-icon :icon="['fas', 'filter']" class="mr-1" />
+                            Filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter panel -->
+                <div v-if="isFilterExpanded" class="bg-white p-4 rounded-lg shadow border border-gray-200 transition-all duration-300">
+                    <h3 class="font-medium mb-3 text-gray-700">Filter Options</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">Blood Group</h4>
+                            <div class="flex flex-wrap gap-3">
+                                <label v-for="group in bloodGroups" :key="group" class="inline-flex items-center">
+                                    <input type="checkbox" v-model="selectedBloodGroups" :value="group" 
+                                        class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50 h-4 w-4">
+                                    <span class="ml-2 font-medium text-gray-800">{{ group }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button v-if="selectedBloodGroups.length > 0" @click="selectedBloodGroups = []" 
+                            class="text-red-500 hover:text-red-700 text-sm font-medium">
+                            Clear Filters
+                        </button>
                     </div>
                 </div>
 
@@ -271,5 +319,10 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 /* Make the Name column bold */
 .custom-table .font-bold {
     font-weight: bold !important;
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    accent-color: #ef4444; /* red-500 */
 }
 </style>
