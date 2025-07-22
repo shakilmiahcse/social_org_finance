@@ -60,7 +60,6 @@ const filteredDonors = computed(() => {
   let result = props.donors;
   
   // Apply search filter
-  // Apply search filter
   if (searchTerm.value) {
     const term = searchTerm.value.toLowerCase();
     result = result.filter(d => 

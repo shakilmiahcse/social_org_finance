@@ -23,6 +23,8 @@ const editTransactionModal = ref();
 const receiptModal = ref();
 const selectedTransaction = ref(null);
 const $refs = ref<Record<string, HTMLElement>>({});
+const isFilterExpanded = ref(false);
+const selectedTypes = ref<string[]>([]);
 
 const props = defineProps({
     transactions: {
@@ -46,14 +48,35 @@ const props = defineProps({
     organization: Object,
 });
 
+// Computed
+const types = computed(() => {
+  return [...new Set(props.transactions.map(d => d.type))].filter(Boolean);
+});
 
-const filteredTransactions = computed(() =>
-    props.transactions.filter(t =>
-        t.txn_id.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-        (t.donor?.name?.toLowerCase().includes(searchTerm.value.toLowerCase())) ||
-        (t.fund?.name?.toLowerCase().includes(searchTerm.value.toLowerCase()))
-    )
-);
+const filteredTransactions = computed(() => {
+    let result = props.transactions;
+
+    // Apply search filter
+    if (searchTerm.value) {
+        const term = searchTerm.value.toLowerCase();
+        result = result.filter(t =>
+            t.txn_id.toLowerCase().includes(term) ||
+            (t.donor?.name?.toLowerCase().includes(term)) ||
+            (t.fund?.name?.toLowerCase().includes(term))
+        );
+    }
+
+    // Apply type filter if any selected
+    if (selectedTypes.value.length > 0) {
+        result = result.filter(t =>
+            selectedTypes.value.includes(t.type)
+        );
+    }
+
+    return result;
+});
+
+
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Transactions', href: '/transactions' },
@@ -214,11 +237,38 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                             Export PDF
                         </button>
                     </div>
-                    <div>
+                    <div class="flex gap-2">
                         <input v-model="searchTerm" type="text" placeholder="Search transactions..."
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
+                        <button @click="isFilterExpanded = !isFilterExpanded" 
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition flex items-center">
+                            <font-awesome-icon :icon="['fas', 'filter']" class="mr-1" />
+                            Filter
+                        </button>
                     </div>
                 </div>
+
+                <!-- Filter panel -->
+                <div v-if="isFilterExpanded" class="bg-white p-4 rounded-lg shadow border border-gray-200 transition-all duration-300">
+                    <h3 class="font-medium mb-3 text-gray-700">Filter Options</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">Type</h4>
+                            <div class="flex flex-wrap gap-3">
+                                <label v-for="group in types" :key="group" class="inline-flex items-center">
+                                    <input type="checkbox" v-model="selectedTypes" :value="group" 
+                                        class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50 h-4 w-4">
+                                    <span class="ml-2 font-medium text-gray-800">{{ group }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button v-if="selectedTypes.length > 0" @click="selectedTypes = []" 
+                            class="text-red-500 hover:text-red-700 text-sm font-medium">
+                            Clear Filters
+                        </button>
+                    </div>
+                </div>
+
                 <div class="overflow-auto">
                     <EasyDataTable :headers="headers" :items="filteredTransactions" header-text-direction="left"
                         :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination
