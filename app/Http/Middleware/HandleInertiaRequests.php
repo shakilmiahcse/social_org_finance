@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         $user = $request->user();
+        $organization = $user?->organization;
 
         return [
             ...parent::share($request),
@@ -60,6 +61,22 @@ class HandleInertiaRequests extends Middleware
                         ? \Spatie\Permission\Models\Permission::pluck('name')->toArray()
                         : $user->getAllPermissions()->pluck('name')->toArray(),
                     'is_super_admin' => $this->isSuperAdmin($user),
+                ] : null,
+                'organization' => $organization ? [
+                    'id' => $organization->id,
+                    'name' => $organization->name,
+                    'email' => $organization->email,
+                    'phone' => $organization->phone,
+                    'address' => $organization->address,
+                    'logo_path' => $organization->logo_path,
+                    'website' => $organization->website,
+                    'timezone' => $organization->timezone,
+                    'currency' => $organization->currency,
+                    'is_active' => $organization->is_active,
+                    'slogan' => $organization->slogan,
+                    'created_at' => $organization->created_at,
+                    'updated_at' => $organization->updated_at,
+                    'common_setting' => $organization->common_setting,
                 ] : null,
             ],
             'ziggy' => [
