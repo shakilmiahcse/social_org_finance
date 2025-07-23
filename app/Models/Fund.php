@@ -3,9 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 class Fund extends Model
 {
+    use LogsActivity;
+
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['title', 'content'])
+            ->logOnlyDirty();
+    }
     protected $fillable = [
         'name', 'description', 'type', 'total_amount', 'created_by', 'updated_by', 'organization_id'
     ];

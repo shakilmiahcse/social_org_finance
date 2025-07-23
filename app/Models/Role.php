@@ -4,9 +4,20 @@ namespace App\Models;
 
 use Spatie\Permission\Models\Role as SpatieRole;
 use Illuminate\Database\Eloquent\Builder;
-
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 class Role extends SpatieRole
 {
+    use LogsActivity;
+
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['title', 'content'])
+            ->logOnlyDirty();
+    }
     protected $fillable = ['name', 'organization_id', 'guard_name'];
 
     public function organization()

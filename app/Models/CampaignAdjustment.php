@@ -3,9 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 class CampaignAdjustment extends Model
 {
+    use LogsActivity;
+
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['title', 'content'])
+            ->logOnlyDirty();
+    }
     protected $fillable = [
         'campaign_fund_id', 'main_fund_id', 'amount', 'type', 'note', 'created_by', 'updated_by', 'organization_id'
     ];

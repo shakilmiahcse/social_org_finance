@@ -74,6 +74,17 @@ class OrgSettingController extends Controller
 
         $organization->update($data);
 
+        // In your update method, after the update:
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($organization)
+            ->withProperties([
+                'changes' => $organization->getChanges(),
+                'old' => $organization->getOriginal()
+            ])
+            ->log('updated organization settings');
+
+
         session([
             'organization_id' => $organization->id,
             'organization_name' => $organization->name,

@@ -3,9 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Transaction extends Model
 {
+    use LogsActivity;
+
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['title', 'content'])
+            ->logOnlyDirty();
+    }
+
     protected $fillable = [
         'txn_id', 'adjustment_id', 'donor_id', 'fund_id', 'amount', 'type', 'purpose',
         'payment_method', 'reference', 'note', 'status',

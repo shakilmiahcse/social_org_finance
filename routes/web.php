@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DonorController;
 use App\Http\Controllers\FundController;
@@ -37,6 +38,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('roles-permissions/{role}', [RolePermissionController::class, 'destroy'])->name('roles-permissions.destroy');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+
+    Route::get('/activity-log', [ActivityLogController::class, 'index'])
+        ->name('activity-log.index');
 });
 
 require __DIR__.'/settings.php';
