@@ -12,10 +12,9 @@ import EditUserModal from './edit.vue';
 
 const toast = useToast();
 const searchTerm = ref('');
-const addUserModal = ref();
-const editUserModal = ref();
-const selectedUser = ref(null);
-const $refs = ref<Record<string, HTMLElement>>({});
+const addUserModal = ref<InstanceType<typeof AddUserModal>>();
+const editUserModal = ref<InstanceType<typeof EditUserModal>>();
+const selectedUser = ref<any>(null);
 
 const props = defineProps({
     users: {
@@ -69,11 +68,12 @@ const headers = [
     { text: 'Actions', value: 'actions', sortable: false, width: 120 },
 ];
 
-const addUser = () => addUserModal.value.open();
+const addUser = () => addUserModal.value?.open();
 
-const editUser = (user) => {
-    selectedUser.value = user;
-    editUserModal.value.open();
+const editUser = (user: any) => {
+    if (!user) return;
+    selectedUser.value = JSON.parse(JSON.stringify(user)); // Deep copy
+    editUserModal.value?.open();
 };
 
 const deleteUser = (id: number, name: string) => {
@@ -100,11 +100,12 @@ const deleteUser = (id: number, name: string) => {
     });
 };
 
-const formatRoles = (roles) => {
+const formatRoles = (roles: string[]) => {
     return roles.map(role =>
         `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${role}</span>`
     ).join(' ');
 };
+
 const rowsPerPage = ref(20);
 const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
@@ -133,8 +134,8 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         <template #item-roles="{ roles }">
                             <div v-html="formatRoles(roles)" class="flex flex-wrap gap-1"></div>
                         </template>
-                        <template #item-actions="{ id, name, roles }">
-                            <div class="flex items-center space-x-3 my-1" v-if="!roles.includes('admin')">
+                        <template #item-actions="{ id, name }">
+                            <div class="flex items-center space-x-3 my-1">
                                 <button v-if="props.can.edit" @click.stop="editUser(filteredUsers.find(u => u.id === id))"
                                     class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-800"
                                     title="Edit">
