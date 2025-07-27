@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Fund;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -151,6 +152,66 @@ class FundController extends Controller
     public function show(Fund $fund)
     {
         //
+    }
+
+    /**
+     * Show the history of the specified resource.
+     */
+
+    public function history(Fund $fund)
+    {
+        if (!auth()->user()->can('funds.view')) {
+            abort(403, 'You do not have permission to view fund history.');
+        }
+
+        // Verify the fund belongs to the organization
+        $organization_id = request()->session()->get("organization_id");
+        if ($fund->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to view this fund.');
+        }
+
+        // Get transactions with running balance
+        $transactions = $fund->getTransactionsWithRunningBalance()
+            ->map(function ($txn) {
+                return [
+                    'id' => $txn->id,
+                    'txn_no' => $txn->txn_id,
+                    'type' => $txn->type,
+                    'amount' => $txn->amount,
+                    'balance' => $txn->running_balance,
+                    'purpose' => $txn->purpose,
+                    'payment_method' => $txn->payment_method,
+                    'reference' => $txn->reference,
+                    'status' => $txn->status,
+                    'created_at' => $txn->created_at,
+                    'donor' => $txn->donor ? ['name' => $txn->donor->name] : null,
+                    'createdBy' => $txn->createdBy ? ['name' => $txn->createdBy->name] : null,
+                ];
+            });
+
+        // Calculate summary
+        $summary = [
+            'total_income' => $fund->transactions()
+                ->where('type', 'credit')
+                ->where('status', 'completed')
+                ->sum('amount'),
+            'total_expense' => $fund->transactions()
+                ->where('type', 'debit')
+                ->where('status', 'completed')
+                ->sum('amount'),
+            'current_balance' => $fund->getBalance(),
+        ];
+
+        // Get all funds for dropdown
+        $funds = Fund::where('organization_id', $organization_id)
+            ->get(['id', 'name']);
+
+        return Inertia::render('Funds/History', [
+            'funds' => $funds,
+            'transactions' => $transactions,
+            'summary' => $summary,
+            'current_fund_id' => $fund->id,
+        ]);
     }
 
     /**

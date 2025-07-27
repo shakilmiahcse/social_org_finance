@@ -83,6 +83,10 @@ const viewFund = (id: number) => {
     }
 };
 
+const viewHistory = (id: number) => {
+    router.get(`/funds/${id}/history`);
+};
+
 const editFund = (id: number) => {
     const fund = props.funds.find(f => f.id === id);
     if (fund) {
@@ -226,7 +230,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                     Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                                 </button>
                                 <div :ref="el => $refs[`dropdown-${id}`] = el"
-                                    class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
+                                    class="hidden absolute right-0 z-10 mt-2 w-32 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
                                     <div class="py-1">
                                         <!-- View Button -->
                                         <button v-if="props.permissions.view" @click.stop="viewFund(id)"
@@ -234,12 +238,20 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                             <font-awesome-icon :icon="['fas', 'eye']" />
                                             View
                                         </button>
-                                        <button v-if="props.permissions.view" @click.stop="editFund(id)"
+                                        <!-- History Button -->
+                                        <button v-if="props.permissions.view" @click.stop="viewHistory(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'history']" />
+                                            History
+                                        </button>
+                                        <!-- Edit Button -->
+                                        <button v-if="props.permissions.edit" @click.stop="editFund(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'pen-to-square']" />
                                             Edit
                                         </button>
-                                        <button v-if="props.permissions.view" @click.stop="deleteFund(id)"
+                                        <!-- Delete Button -->
+                                        <button v-if="props.permissions.delete" @click.stop="deleteFund(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'trash']" />
                                             Delete

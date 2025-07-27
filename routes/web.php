@@ -20,6 +20,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/donors/dropdown', [DonorController::class, 'getDropdown']);
     Route::resource('donors', DonorController::class);
+
+    Route::get('/funds/{fund}/history', [FundController::class, 'history'])->name('funds.history');
     Route::get('/funds/dropdown', [FundController::class, 'getDropdown']);
     Route::resource('funds', FundController::class);
     Route::get('incomes/create', [TransactionController::class, 'createIncome'])->name('incomes.create');

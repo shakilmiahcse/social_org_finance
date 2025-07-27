@@ -65,4 +65,34 @@ class Fund extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    /**
+     * Calculate the current balance of the fund
+     */
+    public function getBalance(): float
+    {
+        return $this->transactions()
+            ->where('status', 'completed')
+            ->get()
+            ->reduce(function ($balance, $transaction) {
+                return $balance + ($transaction->type === 'credit' ? $transaction->amount : -$transaction->amount);
+            }, 0);
+    }
+
+    /**
+     * Get transactions with running balance (more efficient implementation)
+     */
+    public function getTransactionsWithRunningBalance()
+    {
+        $balance = 0;
+        return $this->transactions()
+            ->orderBy('created_at')
+            ->with(['donor', 'createdBy'])
+            ->get()
+            ->map(function ($transaction) use (&$balance) {
+                $balance += ($transaction->type === 'credit' ? $transaction->amount : -$transaction->amount);
+                $transaction->running_balance = $balance;
+                return $transaction;
+            });
+    }
 }
