@@ -99,7 +99,7 @@ class ReportController extends Controller
         $organization_id = request()->session()->get("organization_id");
         $months = $params['months'] ?? 6;
 
-        return Transaction::where('organization_id', $organization_id)->selectRaw('
+        return Transaction::where('organization_id', $organization_id)->where('status', 'completed')->selectRaw('
                 YEAR(created_at) as year,
                 MONTH(created_at) as month,
                 SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) as credit,
@@ -121,7 +121,7 @@ class ReportController extends Controller
     {
         $organization_id = request()->session()->get("organization_id");
 
-        $query = Transaction::where('organization_id', $organization_id);
+        $query = Transaction::where('organization_id', $organization_id)->where('status', 'completed');
         $this->applyDateFilters($query, $params);
         return $query;
     }
