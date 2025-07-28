@@ -6,7 +6,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Users, Banknote, ReceiptText, Sliders, LineChart, Settings, HandCoins, Clock } from 'lucide-vue-next';
-import AppLogo from './AppLogo.vue';
+import AppLogo from './AppLogo.vue'; 
 
 const mainNavItems: NavItem[] = [
     {
@@ -136,7 +136,6 @@ const footerNavItems: NavItem[] = [
 
         <SidebarFooter>
             <NavFooter :items="footerNavItems" />
-            <NavUser />
         </SidebarFooter>
     </Sidebar>
     <slot />

@@ -63,4 +63,9 @@ class User extends Authenticatable
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
+
+    public function unreadNotificationsCount()
+    {
+        return $this->unreadNotifications()->count();
+    }
 }

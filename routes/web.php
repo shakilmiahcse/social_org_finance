@@ -43,6 +43,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])
         ->name('activity-log.index');
+
+    Route::post('/notifications/mark-as-read', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return back();
+    })->middleware('auth');
 });
 
 require __DIR__.'/settings.php';

@@ -22,7 +22,7 @@ library.add(fas);
 // Import Share API polyfill
 import 'share-api-polyfill';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'OikkoSoft';
 
 createInertiaApp({
   title: (title) => `${title} - ${appName}`,
