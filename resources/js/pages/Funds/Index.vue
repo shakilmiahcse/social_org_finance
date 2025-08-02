@@ -211,6 +211,13 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                 <!-- Fund table -->
                 <div v-if="props.permissions.view" class="overflow-auto">
                     <EasyDataTable :headers="headers" :items="filteredFunds" header-text-direction="left" :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination class="custom-table min-w-[700px]">
+
+                        <template #item-description="{ description }">
+                            <span :title="description">
+                                {{ description && description.length > 40 ? `${description.substring(0, 40)}...` : description || 'N/A' }}
+                            </span>
+                        </template>
+
                         <template #item-type="{ type }">
                             <span
                                 :class="[

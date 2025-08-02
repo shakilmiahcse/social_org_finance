@@ -234,7 +234,6 @@ class FundController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|in:main,campaign',
-            'total_amount' => 'required|numeric|min:0',
         ]);
 
         try {
@@ -242,7 +241,6 @@ class FundController extends Controller
                 'name' => $validated['name'],
                 'description' => $validated['description'],
                 'type' => $validated['type'],
-                'total_amount' => $validated['total_amount'],
                 'updated_by' => auth()->id(),
             ]);
 
