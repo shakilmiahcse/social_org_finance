@@ -336,7 +336,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         </button>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         <!-- Date Range Filter -->
                         <div>
                             <h4 class="font-semibold mb-2 text-gray-700">Date Range</h4>
@@ -348,38 +348,6 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                 placeholder="Select date range"
                                 class="w-full"
                             />
-                        </div>
-
-                        <!-- Type Filter -->
-                        <div>
-                            <h4 class="font-semibold mb-2 text-gray-700">Type</h4>
-                            <div class="space-y-2">
-                                <label v-for="type in types" :key="type" class="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        v-model="selectedTypes" 
-                                        :value="type"
-                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
-                                    >
-                                    <span class="ml-2 text-gray-800 capitalize">{{ type }}</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Status Filter -->
-                        <div>
-                            <h4 class="font-semibold mb-2 text-gray-700">Status</h4>
-                            <div class="space-y-2">
-                                <label v-for="status in statuses" :key="status" class="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        v-model="selectedStatuses" 
-                                        :value="status"
-                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
-                                    >
-                                    <span class="ml-2 text-gray-800 capitalize">{{ status }}</span>
-                                </label>
-                            </div>
                         </div>
 
                         <!-- Payment Method Filter -->
@@ -416,6 +384,38 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                     {{ creator }}
                                 </option>
                             </select>
+                        </div>
+
+                        <!-- Type Filter -->
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">Type</h4>
+                            <div class="space-y-2">
+                                <label v-for="type in types" :key="type" class="flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        v-model="selectedTypes" 
+                                        :value="type"
+                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
+                                    >
+                                    <span class="ml-2 text-gray-800 capitalize">{{ type }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">Status</h4>
+                            <div class="space-y-2">
+                                <label v-for="status in statuses" :key="status" class="flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        v-model="selectedStatuses" 
+                                        :value="status"
+                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
+                                    >
+                                    <span class="ml-2 text-gray-800 capitalize">{{ status }}</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
