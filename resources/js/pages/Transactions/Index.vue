@@ -14,6 +14,8 @@ import EditTransactionModal from './edit.vue';
 import { useToast } from 'vue-toastification';
 import ViewTransactionModal from './view.vue';
 import ReceiptModal from './ReceiptModal.vue';
+import Datepicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
 
 const toast = useToast();
 const page = usePage();
@@ -24,7 +26,13 @@ const receiptModal = ref();
 const selectedTransaction = ref(null);
 const $refs = ref<Record<string, HTMLElement>>({});
 const isFilterExpanded = ref(false);
+
+// Filters
 const selectedTypes = ref<string[]>([]);
+const selectedStatuses = ref<string[]>([]);
+const selectedPaymentMethod = ref('');
+const selectedCreatedBy = ref('');
+const dateRange = ref<[Date | null, Date | null]>([null, null]);
 
 const props = defineProps({
     transactions: {
@@ -46,11 +54,95 @@ const props = defineProps({
         required: true
     },
     organization: Object,
+    filters: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
-// Computed
+// Computed properties for filter options
 const types = computed(() => {
   return [...new Set(props.transactions.map(d => d.type))].filter(Boolean);
+});
+
+const statuses = computed(() => {
+  return [...new Set(props.transactions.map(d => d.status))].filter(Boolean);
+});
+
+const paymentMethods = computed(() => {
+  return [...new Set(props.transactions.map(d => d.payment_method))].filter(Boolean);
+});
+
+const createdBys = computed(() => {
+  return [...new Set(props.transactions
+    .filter(t => t.createdBy?.name)
+    .map(t => t.createdBy?.name))] as string[];
+});
+
+// Update the watcher to use the new single-value filters
+watch([dateRange, selectedTypes, selectedStatuses, selectedPaymentMethod, selectedCreatedBy], () => {
+    const params: Record<string, any> = {};
+    
+    if (dateRange.value[0] && dateRange.value[1]) {
+        params.start_date = dateRange.value[0].toISOString().split('T')[0];
+        params.end_date = dateRange.value[1].toISOString().split('T')[0];
+    }
+    
+    if (selectedTypes.value.length > 0) {
+        params.types = selectedTypes.value;
+    }
+    
+    if (selectedStatuses.value.length > 0) {
+        params.statuses = selectedStatuses.value;
+    }
+    
+    if (selectedPaymentMethod.value) {
+        params.payment_method = selectedPaymentMethod.value;
+    }
+    
+    if (selectedCreatedBy.value) {
+        params.created_by = selectedCreatedBy.value;
+    }
+    
+    router.get('/transactions', params, {
+        preserveState: true,
+        replace: true,
+        preserveScroll: true,
+    });
+}, { deep: true });
+
+// Update the reset function
+const resetFilters = () => {
+    dateRange.value = [null, null];
+    selectedTypes.value = [];
+    selectedStatuses.value = [];
+    selectedPaymentMethod.value = '';
+    selectedCreatedBy.value = '';
+};
+
+// Update the mounted hook to initialize dropdown values
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside);
+    
+    // Initialize filters from props if they exist
+    if (props.filters.types) {
+        selectedTypes.value = Array.isArray(props.filters.types) ? props.filters.types : [props.filters.types];
+    }
+    if (props.filters.statuses) {
+        selectedStatuses.value = Array.isArray(props.filters.statuses) ? props.filters.statuses : [props.filters.statuses];
+    }
+    if (props.filters.payment_method) {
+        selectedPaymentMethod.value = props.filters.payment_method;
+    }
+    if (props.filters.created_by) {
+        selectedCreatedBy.value = props.filters.created_by;
+    }
+    if (props.filters.start_date && props.filters.end_date) {
+        dateRange.value = [
+            new Date(props.filters.start_date),
+            new Date(props.filters.end_date)
+        ];
+    }
 });
 
 const filteredTransactions = computed(() => {
@@ -66,17 +158,8 @@ const filteredTransactions = computed(() => {
         );
     }
 
-    // Apply type filter if any selected
-    if (selectedTypes.value.length > 0) {
-        result = result.filter(t =>
-            selectedTypes.value.includes(t.type)
-        );
-    }
-
     return result;
 });
-
-
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Transactions', href: '/transactions' },
@@ -195,10 +278,6 @@ const exportToPDF = () => {
     doc.save('transactions.pdf');
 };
 
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
-});
-
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
 });
@@ -250,22 +329,94 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 
                 <!-- Filter panel -->
                 <div v-if="isFilterExpanded" class="bg-white p-4 rounded-lg shadow border border-gray-200 transition-all duration-300">
-                    <h3 class="font-medium mb-3 text-gray-700">Filter Options</h3>
-                    <div class="space-y-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-medium text-gray-700">Filter Options</h3>
+                        <button @click="resetFilters" class="text-sm text-red-500 hover:text-red-700">
+                            Reset All Filters
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Date Range Filter -->
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">Date Range</h4>
+                            <Datepicker 
+                                v-model="dateRange" 
+                                range 
+                                :enable-time-picker="false" 
+                                auto-apply
+                                placeholder="Select date range"
+                                class="w-full"
+                            />
+                        </div>
+
+                        <!-- Type Filter -->
                         <div>
                             <h4 class="font-semibold mb-2 text-gray-700">Type</h4>
-                            <div class="flex flex-wrap gap-3">
-                                <label v-for="group in types" :key="group" class="inline-flex items-center">
-                                    <input type="checkbox" v-model="selectedTypes" :value="group" 
-                                        class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50 h-4 w-4">
-                                    <span class="ml-2 font-medium text-gray-800">{{ group }}</span>
+                            <div class="space-y-2">
+                                <label v-for="type in types" :key="type" class="flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        v-model="selectedTypes" 
+                                        :value="type"
+                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
+                                    >
+                                    <span class="ml-2 text-gray-800 capitalize">{{ type }}</span>
                                 </label>
                             </div>
                         </div>
-                        <button v-if="selectedTypes.length > 0" @click="selectedTypes = []" 
-                            class="text-red-500 hover:text-red-700 text-sm font-medium">
-                            Clear Filters
-                        </button>
+
+                        <!-- Status Filter -->
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">Status</h4>
+                            <div class="space-y-2">
+                                <label v-for="status in statuses" :key="status" class="flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        v-model="selectedStatuses" 
+                                        :value="status"
+                                        class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
+                                    >
+                                    <span class="ml-2 text-gray-800 capitalize">{{ status }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method Filter -->
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">Payment Method</h4>
+                            <select 
+                                v-model="selectedPaymentMethod" 
+                                class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:border-blue-100"
+                            >
+                                <option value="">All Payment Methods</option>
+                                <option 
+                                    v-for="method in paymentMethods" 
+                                    :key="method" 
+                                    :value="method"
+                                >
+                                    {{ method }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Created By Filter -->
+                        <div>
+                            <h4 class="font-semibold mb-2 text-gray-700">Created By</h4>
+                            <select 
+                                v-model="selectedCreatedBy" 
+                                class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:border-blue-100"
+                            >
+                                <option value="">All Creators</option>
+                                <option 
+                                    v-for="creator in createdBys" 
+                                    :key="creator" 
+                                    :value="creator"
+                                >
+                                    {{ creator }}
+                                </option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -354,5 +505,29 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 
 .custom-table .font-bold {
     font-weight: bold !important;
+}
+
+.dp__main {
+    font-family: inherit;
+}
+
+.dp__input {
+    height: 42px;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    padding-left: 2.5rem;
+}
+
+.dp__input:hover {
+    border-color: #93c5fd;
+}
+
+.dp__input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.dp__menu {
+    z-index: 50;
 }
 </style>

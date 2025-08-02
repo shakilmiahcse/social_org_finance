@@ -16,58 +16,85 @@ class TransactionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         if (!auth()->user()->can('transactions.view')) {
             abort(403, 'You do not have permission to view transactions.');
         }
+
         $organization_id = request()->session()->get("organization_id");
 
-        $transactions = Transaction::with(['createdBy', 'updatedBy'])
-            ->leftJoin('donors', 'transactions.donor_id', '=', 'donors.id')
-            ->leftJoin('funds', 'transactions.fund_id', '=', 'funds.id')
-            ->where('transactions.organization_id', $organization_id)
-            ->select(
-                'transactions.*',
-                'donors.name as donor_name',
-                'funds.name as fund_name',
-            )
-            ->orderBy('transactions.created_at', 'desc')
+        $query = Transaction::with(['createdBy', 'updatedBy', 'donor', 'fund'])
+            ->where('transactions.organization_id', $organization_id);
+
+        // Apply date range filter
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('transactions.created_at', [
+                Carbon::parse($request->start_date)->startOfDay(),
+                Carbon::parse($request->end_date)->endOfDay()
+            ]);
+        }
+
+        // Apply type filter
+        if ($request->has('types')) {
+            $query->whereIn('type', (array)$request->types);
+        }
+
+        // Apply status filter
+        if ($request->has('statuses')) {
+            $query->whereIn('status', (array)$request->statuses);
+        }
+
+        // Apply payment method filter (single value now)
+        if ($request->has('payment_method') && $request->payment_method) {
+            $query->where('payment_method', $request->payment_method);
+        }
+
+        // Apply created by filter (single value now)
+        if ($request->has('created_by') && $request->created_by) {
+            $query->whereHas('createdBy', function ($q) use ($request) {
+                $q->where('name', $request->created_by);
+            });
+        }
+
+        $transactions = $query->orderBy('transactions.created_at', 'desc')
             ->get()
             ->map(function ($transaction) {
                 return [
                     'id' => $transaction->id,
                     'txn_id' => $transaction->txn_id,
-                    'donor_id' => $transaction->donor->id ?? null,
-                    'fund_id' => $transaction->fund_id ?? null,
+                    'donor_id' => $transaction->donor_id,
+                    'fund_id' => $transaction->fund_id,
                     'status' => $transaction->status,
-                    'donor' => $transaction->donor_name ? ['name' => $transaction->donor_name] : null,
-                    'fund' => $transaction->fund_name ? ['name' => $transaction->fund_name] : null,
+                    'donor' => $transaction->donor ? ['name' => $transaction->donor->name] : null,
+                    'fund' => $transaction->fund ? ['name' => $transaction->fund->name] : null,
                     'amount' => number_format($transaction->amount, 2),
                     'type' => $transaction->type,
                     'purpose' => $transaction->purpose,
                     'payment_method' => $transaction->payment_method,
                     'reference' => $transaction->reference,
                     'note' => $transaction->note,
-                    'createdBy'   => $transaction->createdBy ? ['name' => $transaction->createdBy->name] : null,
-                    'updatedBy'   => $transaction->updatedBy ? ['name' => $transaction->updatedBy->name] : null,
+                    'createdBy' => $transaction->createdBy ? ['name' => $transaction->createdBy->name] : null,
+                    'updatedBy' => $transaction->updatedBy ? ['name' => $transaction->updatedBy->name] : null,
                     'created_at' => Carbon::parse($transaction->created_at)->format('j F, Y g:i A'),
                     'updated_at' => Carbon::parse($transaction->updated_at)->format('j F, Y g:i A'),
                 ];
             });
 
-        $donors = Donor::getDropdown();
-        $funds = Fund::getDropdown();
-
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
-            'donors' => $donors,
-            'funds' => $funds,
             'organization' => [
                 'name' => session('organization_name'),
                 'slogan' => session('organization_slogan'),
                 'logo_path' => session('organization_logo_path'),
+                'currency' => session('organization_currency'),
+                'timezone' => session('organization_timezone'),
+                'website' => session('organization_website'),
+                'address' => session('organization_address'),
+                'phone' => session('organization_phone'),
+                'email' => session('organization_email'),
             ],
+            'filters' => $request->all(),
             'permissions' => [
                 'view' => auth()->user()->can('transactions.view'),
                 'create' => auth()->user()->can('transactions.create'),

@@ -20,10 +20,10 @@ class ReportController extends Controller
 
         return Inertia::render('Reports/Index', [
             'initialData' => [
-            'financialSummary' => $this->getFinancialSummaryData($validated),
-            'fundAllocation' => $this->getFundAllocationData($validated),
-            'topDonors' => $this->getTopDonorsData($validated),
-            'transactionTrends' => $this->getTransactionTrendsData($validated),
+                'financialSummary' => $this->getFinancialSummaryData($validated),
+                'fundAllocation' => $this->getFundAllocationData($validated),
+                'topDonors' => $this->getTopDonorsData($validated),
+                'transactionTrends' => $this->getTransactionTrendsData($validated),
             ],
             'filters' => $validated,
             'permissions' => [
@@ -36,12 +36,22 @@ class ReportController extends Controller
 
     private function validateRequest(Request $request)
     {
-        return $request->validate([
+        $validated = $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'months' => 'nullable|integer|min:1|max:24',
             'limit' => 'nullable|integer|min:1|max:100',
         ]);
+
+        // Set default date range (last 7 days) if no dates provided
+        if (empty($validated['start_date'])) {
+            $validated['start_date'] = now()->subDays(7)->format('Y-m-d');
+        }
+        if (empty($validated['end_date'])) {
+            $validated['end_date'] = now()->format('Y-m-d');
+        }
+
+        return $validated;
     }
 
     private function getFinancialSummaryData(array $params)
@@ -59,9 +69,10 @@ class ReportController extends Controller
     private function getFundAllocationData(array $params)
     {
         $organization_id = request()->session()->get("organization_id");
-        return Fund::where('organization_id', $organization_id)->withSum(['transactions' => function($q) use ($params) {
-            $this->applyDateFilters($q, $params);
-        }], 'amount')
+        return Fund::where('organization_id', $organization_id)
+            ->withSum(['transactions' => function($q) use ($params) {
+                $this->applyDateFilters($q, $params);
+            }], 'amount')
             ->having('transactions_sum_amount', '>', 0)
             ->orderByDesc('transactions_sum_amount')
             ->get()
@@ -77,9 +88,10 @@ class ReportController extends Controller
     private function getTopDonorsData(array $params)
     {
         $organization_id = request()->session()->get("organization_id");
-        return Donor::where('organization_id', $organization_id)->withSum(['transactions' => function($q) use ($params) {
-            $this->applyDateFilters($q, $params);
-        }], 'amount')
+        return Donor::where('organization_id', $organization_id)
+            ->withSum(['transactions' => function($q) use ($params) {
+                $this->applyDateFilters($q, $params);
+            }], 'amount')
             ->orderByDesc('transactions_sum_amount')
             ->take($params['limit'] ?? 5)
             ->get()
@@ -99,18 +111,16 @@ class ReportController extends Controller
         $organization_id = request()->session()->get("organization_id");
         $months = $params['months'] ?? 6;
 
-        return Transaction::where('organization_id', $organization_id)->where('status', 'completed')->selectRaw('
+        return Transaction::where('organization_id', $organization_id)
+            ->where('status', 'completed')
+            ->selectRaw('
                 YEAR(created_at) as year,
                 MONTH(created_at) as month,
                 SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) as credit,
                 SUM(CASE WHEN type = "debit" THEN amount ELSE 0 END) as debit
             ')
-            ->when(empty($params['start_date']), function($q) use ($months) {
-                $q->where('created_at', '>=', now()->subMonths($months));
-            })
-            ->when(!empty($params['start_date']), function($q) use ($params) {
-                $this->applyDateFilters($q, $params);
-            })
+            ->whereDate('created_at', '>=', $params['start_date'])
+            ->whereDate('created_at', '<=', $params['end_date'])
             ->groupBy('year', 'month')
             ->orderBy('year')
             ->orderBy('month')
@@ -121,20 +131,16 @@ class ReportController extends Controller
     {
         $organization_id = request()->session()->get("organization_id");
 
-        $query = Transaction::where('organization_id', $organization_id)->where('status', 'completed');
+        $query = Transaction::where('organization_id', $organization_id)
+            ->where('status', 'completed');
         $this->applyDateFilters($query, $params);
         return $query;
     }
 
     private function applyDateFilters($query, array $params)
     {
-        if (!empty($params['start_date'])) {
-            $query->whereDate('created_at', '>=', Carbon::parse($params['start_date']));
-        }
-
-        if (!empty($params['end_date'])) {
-            $query->whereDate('created_at', '<=', Carbon::parse($params['end_date']));
-        }
+        $query->whereDate('created_at', '>=', $params['start_date'])
+              ->whereDate('created_at', '<=', $params['end_date']);
     }
 
     public function export(Request $request)

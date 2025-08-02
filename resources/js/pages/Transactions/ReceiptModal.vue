@@ -174,6 +174,11 @@ interface Organization {
     name: string;
     slogan: string;
     logo_path: string;
+    address: string;
+    phone: string;
+    email: string;
+    website: string;
+    curency: string;
 }
 
 const props = defineProps<{
@@ -223,12 +228,12 @@ const formatCurrency = (amount: string) => {
         return 'Invalid amount';
     }
 
-    const formatted = numberAmount.toLocaleString('en-US', {
+    const formatted = numberAmount.toLocaleString('bn-BD', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
 
-    return `BDT ${formatted}`;
+    return  props.organization.currency + ' ' + formatted;
 };
 
 const statusColorClasses = (status: string) => {

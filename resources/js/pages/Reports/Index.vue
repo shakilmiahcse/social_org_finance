@@ -31,14 +31,21 @@ const props = defineProps({
     }
 });
 
-// Date range picker setup
+// Date range picker setup - default to last 7 days
 const dateRange = ref([
-    props.filters.start_date ? new Date(props.filters.start_date) : null,
-    props.filters.end_date ? new Date(props.filters.end_date) : null
+    props.filters.start_date ? new Date(props.filters.start_date) : new Date(new Date().setDate(new Date().getDate() - 7)),
+    props.filters.end_date ? new Date(props.filters.end_date) : new Date()
 ]);
 
 // Preset ranges for date picker
 const presetRanges = ref([
+    {
+        label: 'Last 7 Days', 
+        value: [
+            new Date(new Date().setDate(new Date().getDate() - 7)),
+            new Date()
+        ]
+    },
     { label: 'Today', value: [new Date(), new Date()] },
     {
         label: 'Yesterday', value: [
@@ -49,7 +56,7 @@ const presetRanges = ref([
     {
         label: 'This Week', value: [
             new Date(new Date().setDate(new Date().getDate() - 7)),
-           new Date()
+            new Date()
         ]
     },
     {
@@ -73,7 +80,7 @@ const presetRanges = ref([
     {
         label: 'This Year', value: [
             new Date(new Date().getFullYear(), 0, 1),
-           new Date()
+            new Date()
         ]
     },
     {
@@ -109,6 +116,36 @@ const filteredTopDonors = computed(() =>
         donor.name.toLowerCase().includes(searchTerm.value.toLowerCase())
     )
 );
+
+// Watch for date range changes and reload data
+watch(dateRange, (newRange) => {
+    if (newRange[0] && newRange[1]) {
+        router.get('/reports', {
+            start_date: newRange[0].toISOString().split('T')[0],
+            end_date: newRange[1].toISOString().split('T')[0],
+            months: months.value,
+            limit: limit.value,
+        }, {
+            preserveState: true,
+            replace: true,
+            preserveScroll: true,
+        });
+    }
+}, { deep: true });
+
+// Watch for months/limit changes
+watch([months, limit], () => {
+    router.get('/reports', {
+        start_date: dateRange.value[0] ? dateRange.value[0].toISOString().split('T')[0] : null,
+        end_date: dateRange.value[1] ? dateRange.value[1].toISOString().split('T')[0] : null,
+        months: months.value,
+        limit: limit.value,
+    }, {
+        preserveState: true,
+        replace: true,
+        preserveScroll: true,
+    });
+});
 
 // Constants
 const breadcrumbs: BreadcrumbItem[] = [
@@ -146,12 +183,13 @@ const exportReport = async (type: 'excel' | 'pdf') => {
 };
 
 const resetDateRange = () => {
-    dateRange.value = [null, null];
+    dateRange.value = [new Date(new Date().setDate(new Date().getDate() - 7)), new Date()];
 };
 
 watch(activeTab, () => {
     searchTerm.value = ''; // Reset search when changing tabs
 });
+
 const rowsPerPage = ref(20);
 const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
@@ -186,6 +224,11 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                     </div>
                                 </template>
                             </Datepicker>
+                            <button @click="resetDateRange" class="p-2 text-gray-500 hover:text-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
 
@@ -358,8 +401,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 }
 
 /* Datepicker custom styles */
-.dp__mai
-n {
+.dp__main {
     font-family: inherit;
 }
 
@@ -381,4 +423,5 @@ n {
 
 .dp__menu {
     z-index: 50;
-}</style>
+}
+</style>
