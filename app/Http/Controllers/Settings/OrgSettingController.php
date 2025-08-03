@@ -111,36 +111,64 @@ class OrgSettingController extends Controller
         $user = request()->user();
         $organization = $user->organization()->first();
 
-        // Default receipt settings
+        // Default settings for both credit and debit receipts
         $defaultSettings = [
-            'header' => [
-                'title' => 'Donation Receipt',
-                'subtitle' => 'Thank you for your generous support!',
-                'color' => 'bg-gradient-to-r from-green-600 to-emerald-700',
-                'icon' => 'hand-holding-heart',
+            'credit' => [
+                'header' => [
+                    'title' => 'অনুদান রসিদ',
+                    'subtitle' => 'আপনার উদার সহায়তার জন্য ধন্যবাদ!',
+                    'color' => 'bg-gradient-to-r from-green-600 to-emerald-700',
+                    'icon' => 'hand-holding-heart',
+                ],
+                'body' => [
+                    'watermark_text' => 'RECEIPT',
+                    'watermark_color' => 'text-green-500/10',
+                    'background_color' => 'bg-green-50',
+                    'transaction_style' => 'bg-green-100/50',
+                ],
+                'footer' => [
+                    'message' => 'আপনার সহযোগিতা আমাদের কাজ অব্যাহত রাখার অনুপ্রেরণা জোগায়।',
+                    'note' => 'এই রসিদটি সংরক্ষণের জন্য একটি অফিসিয়াল ডকুমেন্ট।',
+                ],
+                'labels' => [
+                    'amount' => 'Transaction Amount',
+                    'date' => 'তারিখ',
+                    'method' => 'অনুদান মাধ্যম',
+                    'donor' => 'দাতার নাম',
+                    'fund' => 'তহবিল',
+                    'purpose' => 'উদ্দেশ্য',
+                ],
             ],
-            'body' => [
-                'watermark_text' => 'RECEIPT',
-                'watermark_color' => 'text-green-500/10',
-                'background_color' => 'bg-green-50',
-                'transaction_style' => 'bg-green-100/50',
-            ],
-            'footer' => [
-                'message' => 'Your contribution helps us continue our work.',
-                'note' => 'This receipt is an official document for record keeping.',
-            ],
-            'labels' => [
-                'amount' => 'Donation Amount',
-                'date' => 'Date',
-                'method' => 'Payment Method',
-                'donor' => 'Donor Name',
-                'fund' => 'Fund',
-                'purpose' => 'Purpose',
+            'debit' => [
+                'header' => [
+                    'title' => 'পেমেন্ট রসিদ',
+                    'subtitle' => 'আপনার পেমেন্টের জন্য ধন্যবাদ!',
+                    'color' => 'bg-gradient-to-r from-blue-600 to-indigo-700',
+                    'icon' => 'receipt',
+                ],
+                'body' => [
+                    'watermark_text' => 'PAYMENT',
+                    'watermark_color' => 'text-blue-500/10',
+                    'background_color' => 'bg-blue-50',
+                    'transaction_style' => 'bg-blue-100/50',
+                ],
+                'footer' => [
+                    'message' => 'এই অর্থায়ন কল্যাণমূলক কার্যক্রমের উন্নয়নে ব্যবহৃত হয়েছে।',
+                    'note' => 'এই রসিদটি সংরক্ষণের জন্য একটি অফিসিয়াল ডকুমেন্ট।',
+                ],
+                'labels' => [
+                    'amount' => 'Transaction Amount',
+                    'date' => 'তারিখ',
+                    'method' => 'পেমেন্ট মাধ্যম',
+                    'donor' => 'উত্তোলনকারীর নাম',
+                    'fund' => 'তহবিল',
+                    'purpose' => 'উদ্দেশ্য',
+                ],
             ],
         ];
 
         // Merge with existing settings
-        $receiptSettings = array_merge(
+        $receiptSettings = array_merge_recursive(
             $defaultSettings,
             $organization->common_setting['receipt'] ?? []
         );
@@ -161,33 +189,56 @@ class OrgSettingController extends Controller
         }
 
         $validated = $request->validate([
-            'receipt.header.title' => 'nullable|string|max:255',
-            'receipt.header.subtitle' => 'nullable|string|max:255',
-            'receipt.header.color' => 'nullable|string|max:255',
-            'receipt.header.icon' => 'nullable|string|max:50',
-            'receipt.body.watermark_text' => 'nullable|string|max:255',
-            'receipt.body.watermark_color' => 'nullable|string|max:255',
-            'receipt.body.background_color' => 'nullable|string|max:255',
-            'receipt.body.transaction_style' => 'nullable|string|max:255',
-            'receipt.footer.message' => 'nullable|string|max:500',
-            'receipt.footer.note' => 'nullable|string|max:500',
-            'receipt.labels.amount' => 'nullable|string|max:100',
-            'receipt.labels.date' => 'nullable|string|max:100',
-            'receipt.labels.method' => 'nullable|string|max:100',
-            'receipt.labels.donor' => 'nullable|string|max:100',
-            'receipt.labels.fund' => 'nullable|string|max:100',
-            'receipt.labels.purpose' => 'nullable|string|max:100',
+            'receipt.credit.header.title' => 'nullable|string|max:255',
+            'receipt.credit.header.subtitle' => 'nullable|string|max:255',
+            'receipt.credit.header.color' => 'nullable|string|max:255',
+            'receipt.credit.header.icon' => 'nullable|string|max:50',
+            'receipt.credit.body.watermark_text' => 'nullable|string|max:255',
+            'receipt.credit.body.watermark_color' => 'nullable|string|max:255',
+            'receipt.credit.body.background_color' => 'nullable|string|max:255',
+            'receipt.credit.body.transaction_style' => 'nullable|string|max:255',
+            'receipt.credit.footer.message' => 'nullable|string|max:500',
+            'receipt.credit.footer.note' => 'nullable|string|max:500',
+            'receipt.credit.labels.amount' => 'nullable|string|max:100',
+            'receipt.credit.labels.date' => 'nullable|string|max:100',
+            'receipt.credit.labels.method' => 'nullable|string|max:100',
+            'receipt.credit.labels.donor' => 'nullable|string|max:100',
+            'receipt.credit.labels.fund' => 'nullable|string|max:100',
+            'receipt.credit.labels.purpose' => 'nullable|string|max:100',
+
+            'receipt.debit.header.title' => 'nullable|string|max:255',
+            'receipt.debit.header.subtitle' => 'nullable|string|max:255',
+            'receipt.debit.header.color' => 'nullable|string|max:255',
+            'receipt.debit.header.icon' => 'nullable|string|max:50',
+            'receipt.debit.body.watermark_text' => 'nullable|string|max:255',
+            'receipt.debit.body.watermark_color' => 'nullable|string|max:255',
+            'receipt.debit.body.background_color' => 'nullable|string|max:255',
+            'receipt.debit.body.transaction_style' => 'nullable|string|max:255',
+            'receipt.debit.footer.message' => 'nullable|string|max:500',
+            'receipt.debit.footer.note' => 'nullable|string|max:500',
+            'receipt.debit.labels.amount' => 'nullable|string|max:100',
+            'receipt.debit.labels.date' => 'nullable|string|max:100',
+            'receipt.debit.labels.method' => 'nullable|string|max:100',
+            'receipt.debit.labels.donor' => 'nullable|string|max:100',
+            'receipt.debit.labels.fund' => 'nullable|string|max:100',
+            'receipt.debit.labels.purpose' => 'nullable|string|max:100',
         ]);
 
         $user = $request->user();
         $organization = $user->organization()->first();
 
-        // Get existing common settings
+        // Initialize common_setting as array if it's null or a string
         $commonSettings = $organization->common_setting ?? [];
 
-        // Update only receipt settings
+        // Ensure it's an array (in case it was stored as JSON string)
+        if (is_string($commonSettings)) {
+            $commonSettings = json_decode($commonSettings, true) ?? [];
+        }
+
+        // Safely merge the new receipt settings
         $commonSettings['receipt'] = $request->receipt;
 
+        // Save the updated settings
         $organization->common_setting = $commonSettings;
         $organization->save();
 
