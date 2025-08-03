@@ -24,6 +24,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/org', [OrgSettingController::class, 'edit'])->name('org.edit');
     Route::put('/settings/org', [OrgSettingController::class, 'update'])->name('org.update');
+    
+    Route::get('settings/receipt', [OrgSettingController::class, 'receiptEdit'])->name('receipt.edit');
+    Route::put('/settings/receipt', [OrgSettingController::class, 'receiptUpdate'])->name('receipt.update');
 
     Route::get('settings/fund-type', [FundTypeController::class, 'edit'])->name('fund-type.edit');
     Route::put('settings/fund-type', [FundTypeController::class, 'update'])->name('fund-type.update');

@@ -102,4 +102,96 @@ class OrgSettingController extends Controller
         return back()->with('success', 'Organization settings updated successfully');
     }
 
+    public function receiptEdit()
+    {
+        if (!auth()->user()->can('settings.view')) {
+            abort(403, 'You do not have permission to view organization settings.');
+        }
+
+        $user = request()->user();
+        $organization = $user->organization()->first();
+
+        // Default receipt settings
+        $defaultSettings = [
+            'header' => [
+                'title' => 'Donation Receipt',
+                'subtitle' => 'Thank you for your generous support!',
+                'color' => 'bg-gradient-to-r from-green-600 to-emerald-700',
+                'icon' => 'hand-holding-heart',
+            ],
+            'body' => [
+                'watermark_text' => 'RECEIPT',
+                'watermark_color' => 'text-green-500/10',
+                'background_color' => 'bg-green-50',
+                'transaction_style' => 'bg-green-100/50',
+            ],
+            'footer' => [
+                'message' => 'Your contribution helps us continue our work.',
+                'note' => 'This receipt is an official document for record keeping.',
+            ],
+            'labels' => [
+                'amount' => 'Donation Amount',
+                'date' => 'Date',
+                'method' => 'Payment Method',
+                'donor' => 'Donor Name',
+                'fund' => 'Fund',
+                'purpose' => 'Purpose',
+            ],
+        ];
+
+        // Merge with existing settings
+        $receiptSettings = array_merge(
+            $defaultSettings,
+            $organization->common_setting['receipt'] ?? []
+        );
+
+        return Inertia::render('settings/Receipt', [
+            'receiptSettings' => $receiptSettings,
+            'can' => [
+                'view' => auth()->user()->can('settings.view'),
+                'update' => auth()->user()->can('settings.update'),
+            ],
+        ]);
+    }
+
+    public function receiptUpdate(Request $request)
+    {
+        if (!auth()->user()->can('settings.update')) {
+            abort(403, 'You do not have permission to update organization settings.');
+        }
+
+        $validated = $request->validate([
+            'receipt.header.title' => 'nullable|string|max:255',
+            'receipt.header.subtitle' => 'nullable|string|max:255',
+            'receipt.header.color' => 'nullable|string|max:255',
+            'receipt.header.icon' => 'nullable|string|max:50',
+            'receipt.body.watermark_text' => 'nullable|string|max:255',
+            'receipt.body.watermark_color' => 'nullable|string|max:255',
+            'receipt.body.background_color' => 'nullable|string|max:255',
+            'receipt.body.transaction_style' => 'nullable|string|max:255',
+            'receipt.footer.message' => 'nullable|string|max:500',
+            'receipt.footer.note' => 'nullable|string|max:500',
+            'receipt.labels.amount' => 'nullable|string|max:100',
+            'receipt.labels.date' => 'nullable|string|max:100',
+            'receipt.labels.method' => 'nullable|string|max:100',
+            'receipt.labels.donor' => 'nullable|string|max:100',
+            'receipt.labels.fund' => 'nullable|string|max:100',
+            'receipt.labels.purpose' => 'nullable|string|max:100',
+        ]);
+
+        $user = $request->user();
+        $organization = $user->organization()->first();
+
+        // Get existing common settings
+        $commonSettings = $organization->common_setting ?? [];
+
+        // Update only receipt settings
+        $commonSettings['receipt'] = $request->receipt;
+
+        $organization->common_setting = $commonSettings;
+        $organization->save();
+
+        return back()->with('success', 'Receipt settings updated successfully');
+    }
+
 }

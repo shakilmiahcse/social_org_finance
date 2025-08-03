@@ -8,6 +8,8 @@ import { Link, usePage } from '@inertiajs/vue3';
 const sidebarNavItems: NavItem[] = [
     { title: 'Organization', href: '/settings/org' },
     { title: 'Fund Type', href: '/settings/fund-type' },
+    { title: 'Receipt Template', href: '/settings/receipt' },
+    
 ];
 
 const page = usePage();
