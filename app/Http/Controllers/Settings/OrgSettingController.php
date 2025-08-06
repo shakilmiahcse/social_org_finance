@@ -107,24 +107,22 @@ class OrgSettingController extends Controller
         if (!auth()->user()->can('settings.view')) {
             abort(403, 'You do not have permission to view organization settings.');
         }
-
         $user = request()->user();
         $organization = $user->organization()->first();
-
         // Default settings for both credit and debit receipts
         $defaultSettings = [
             'credit' => [
                 'header' => [
                     'title' => 'অনুদান রসিদ',
                     'subtitle' => 'আপনার উদার সহায়তার জন্য ধন্যবাদ!',
-                    'color' => 'bg-gradient-to-r from-green-600 to-emerald-700',
+                    'color' => '#16a34a', // Default green hex color
                     'icon' => 'hand-holding-heart',
                 ],
                 'body' => [
                     'watermark_text' => 'RECEIPT',
-                    'watermark_color' => 'text-green-500/10',
-                    'background_color' => 'bg-green-50',
-                    'transaction_style' => 'bg-green-100/50',
+                    'watermark_color' => '#22c55e', // Green-500
+                    'background_color' => '#f0fdf4', // Green-50
+                    'transaction_style' => '#dcfce7', // Green-100
                 ],
                 'footer' => [
                     'message' => 'আপনার সহযোগিতা আমাদের কাজ অব্যাহত রাখার অনুপ্রেরণা জোগায়।',
@@ -143,14 +141,14 @@ class OrgSettingController extends Controller
                 'header' => [
                     'title' => 'পেমেন্ট রসিদ',
                     'subtitle' => 'আপনার পেমেন্টের জন্য ধন্যবাদ!',
-                    'color' => 'bg-gradient-to-r from-blue-600 to-indigo-700',
+                    'color' => '#2563eb', // Default blue hex color
                     'icon' => 'receipt',
                 ],
                 'body' => [
                     'watermark_text' => 'PAYMENT',
-                    'watermark_color' => 'text-blue-500/10',
-                    'background_color' => 'bg-blue-50',
-                    'transaction_style' => 'bg-blue-100/50',
+                    'watermark_color' => '#3b82f6', // Blue-500
+                    'background_color' => '#eff6ff', // Blue-50
+                    'transaction_style' => '#dbeafe', // Blue-100
                 ],
                 'footer' => [
                     'message' => 'এই অর্থায়ন কল্যাণমূলক কার্যক্রমের উন্নয়নে ব্যবহৃত হয়েছে।',
@@ -166,13 +164,11 @@ class OrgSettingController extends Controller
                 ],
             ],
         ];
-
         // Merge with existing settings
         $receiptSettings = array_merge_recursive(
             $defaultSettings,
             $organization->common_setting['receipt'] ?? []
         );
-
         return Inertia::render('settings/Receipt', [
             'receiptSettings' => $receiptSettings,
             'can' => [
@@ -187,16 +183,15 @@ class OrgSettingController extends Controller
         if (!auth()->user()->can('settings.update')) {
             abort(403, 'You do not have permission to update organization settings.');
         }
-
         $validated = $request->validate([
             'receipt.credit.header.title' => 'nullable|string|max:255',
             'receipt.credit.header.subtitle' => 'nullable|string|max:255',
-            'receipt.credit.header.color' => 'nullable|string|max:255',
+            'receipt.credit.header.color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'receipt.credit.header.icon' => 'nullable|string|max:50',
             'receipt.credit.body.watermark_text' => 'nullable|string|max:255',
-            'receipt.credit.body.watermark_color' => 'nullable|string|max:255',
-            'receipt.credit.body.background_color' => 'nullable|string|max:255',
-            'receipt.credit.body.transaction_style' => 'nullable|string|max:255',
+            'receipt.credit.body.watermark_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'receipt.credit.body.background_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'receipt.credit.body.transaction_style' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'receipt.credit.footer.message' => 'nullable|string|max:500',
             'receipt.credit.footer.note' => 'nullable|string|max:500',
             'receipt.credit.labels.amount' => 'nullable|string|max:100',
@@ -205,15 +200,14 @@ class OrgSettingController extends Controller
             'receipt.credit.labels.donor' => 'nullable|string|max:100',
             'receipt.credit.labels.fund' => 'nullable|string|max:100',
             'receipt.credit.labels.purpose' => 'nullable|string|max:100',
-
             'receipt.debit.header.title' => 'nullable|string|max:255',
             'receipt.debit.header.subtitle' => 'nullable|string|max:255',
-            'receipt.debit.header.color' => 'nullable|string|max:255',
+            'receipt.debit.header.color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'receipt.debit.header.icon' => 'nullable|string|max:50',
             'receipt.debit.body.watermark_text' => 'nullable|string|max:255',
-            'receipt.debit.body.watermark_color' => 'nullable|string|max:255',
-            'receipt.debit.body.background_color' => 'nullable|string|max:255',
-            'receipt.debit.body.transaction_style' => 'nullable|string|max:255',
+            'receipt.debit.body.watermark_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'receipt.debit.body.background_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'receipt.debit.body.transaction_style' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'receipt.debit.footer.message' => 'nullable|string|max:500',
             'receipt.debit.footer.note' => 'nullable|string|max:500',
             'receipt.debit.labels.amount' => 'nullable|string|max:100',
@@ -223,25 +217,19 @@ class OrgSettingController extends Controller
             'receipt.debit.labels.fund' => 'nullable|string|max:100',
             'receipt.debit.labels.purpose' => 'nullable|string|max:100',
         ]);
-
         $user = $request->user();
         $organization = $user->organization()->first();
-
         // Initialize common_setting as array if it's null or a string
         $commonSettings = $organization->common_setting ?? [];
-
         // Ensure it's an array (in case it was stored as JSON string)
         if (is_string($commonSettings)) {
             $commonSettings = json_decode($commonSettings, true) ?? [];
         }
-
         // Safely merge the new receipt settings
         $commonSettings['receipt'] = $request->receipt;
-
         // Save the updated settings
         $organization->common_setting = $commonSettings;
         $organization->save();
-
         return back()->with('success', 'Receipt settings updated successfully');
     }
 

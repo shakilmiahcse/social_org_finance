@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\Donor;
 use App\Models\Fund;
+use App\Models\Organization;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -23,6 +24,8 @@ class TransactionController extends Controller
         }
 
         $organization_id = request()->session()->get("organization_id");
+
+        $organization = Organization::where('id', $organization_id)->first();
 
         $query = Transaction::with(['createdBy', 'updatedBy', 'donor', 'fund'])
             ->where('transactions.organization_id', $organization_id);
@@ -83,17 +86,7 @@ class TransactionController extends Controller
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
-            'organization' => [
-                'name' => session('organization_name'),
-                'slogan' => session('organization_slogan'),
-                'logo_path' => session('organization_logo_path'),
-                'currency' => session('organization_currency'),
-                'timezone' => session('organization_timezone'),
-                'website' => session('organization_website'),
-                'address' => session('organization_address'),
-                'phone' => session('organization_phone'),
-                'email' => session('organization_email'),
-            ],
+            'organization' => $organization,
             'filters' => $request->all(),
             'permissions' => [
                 'view' => auth()->user()->can('transactions.view'),
