@@ -54,6 +54,7 @@ const props = defineProps({
         required: true
     },
     organization: Object,
+    receiptSettings: Object,
     filters: {
         type: Object,
         default: () => ({}),
@@ -62,21 +63,21 @@ const props = defineProps({
 
 // Computed properties for filter options
 const types = computed(() => {
-  return [...new Set(props.transactions.map(d => d.type))].filter(Boolean);
+    return [...new Set(props.transactions.map(d => d.type))].filter(Boolean);
 });
 
 const statuses = computed(() => {
-  return [...new Set(props.transactions.map(d => d.status))].filter(Boolean);
+    return [...new Set(props.transactions.map(d => d.status))].filter(Boolean);
 });
 
 const paymentMethods = computed(() => {
-  return [...new Set(props.transactions.map(d => d.payment_method))].filter(Boolean);
+    return [...new Set(props.transactions.map(d => d.payment_method))].filter(Boolean);
 });
 
 const createdBys = computed(() => {
-  return [...new Set(props.transactions
-    .filter(t => t.createdBy?.name)
-    .map(t => t.createdBy?.name))] as string[];
+    return [...new Set(props.transactions
+        .filter(t => t.createdBy?.name)
+        .map(t => t.createdBy?.name))] as string[];
 });
 
 // Update the watcher to use the new single-value filters
@@ -124,7 +125,6 @@ const resetFilters = () => {
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
 
-    // Initialize filters from props if they exist
     if (props.filters.types) {
         selectedTypes.value = Array.isArray(props.filters.types) ? props.filters.types : [props.filters.types];
     }
@@ -148,7 +148,6 @@ onMounted(() => {
 const filteredTransactions = computed(() => {
     let result = props.transactions;
 
-    // Apply search filter
     if (searchTerm.value) {
         const term = searchTerm.value.toLowerCase();
         result = result.filter(t =>
@@ -490,7 +489,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 
         <ViewTransactionModal ref="viewTransactionModal" :transaction="selectedTransaction" />
         <EditTransactionModal ref="editTransactionModal" :transaction="selectedTransaction" />
-        <ReceiptModal ref="receiptModal" :transaction="selectedTransaction" :organization="organization"/>
+        <ReceiptModal ref="receiptModal" :transaction="selectedTransaction" :organization="organization" :receiptSettings="receiptSettings" />
     </AppLayout>
 </template>
 

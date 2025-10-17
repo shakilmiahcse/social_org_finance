@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class TransactionController extends Controller
 {
@@ -24,8 +25,72 @@ class TransactionController extends Controller
         }
 
         $organization_id = request()->session()->get("organization_id");
-
         $organization = Organization::where('id', $organization_id)->first();
+
+        $defaultReceiptSettings = [
+            'credit' => [
+                'header' => [
+                    'title' => 'Donation Receipt',
+                    'subtitle' => 'Thank you for your generous support!',
+                    'color' => '#16a34a',
+                    'icon' => 'hand-holding-heart',
+                ],
+                'body' => [
+                    'watermark_text' => 'RECEIPT',
+                    'watermark_color' => '#22c55e',
+                    'background_color' => '#f0fdf4',
+                    'transaction_style' => '#dcfce7',
+                ],
+                'footer' => [
+                    'message' => 'Your support helps us continue our mission.',
+                    'note' => 'This receipt is an official document for your records.',
+                ],
+                'labels' => [
+                    'amount' => 'Donation Amount',
+                    'date' => 'Date',
+                    'method' => 'Donation Method',
+                    'donor' => 'Donor Name',
+                    'fund' => 'Fund',
+                    'purpose' => 'Purpose',
+                ],
+            ],
+            'debit' => [
+                'header' => [
+                    'title' => 'Payment Receipt',
+                    'subtitle' => 'Thank you for your payment!',
+                    'color' => '#2563eb',
+                    'icon' => 'receipt',
+                ],
+                'body' => [
+                    'watermark_text' => 'PAYMENT',
+                    'watermark_color' => '#3b82f6',
+                    'background_color' => '#eff6ff',
+                    'transaction_style' => '#dbeafe',
+                ],
+                'footer' => [
+                    'message' => 'This payment supports our welfare activities.',
+                    'note' => 'This receipt is an official document for your records.',
+                ],
+                'labels' => [
+                    'amount' => 'Payment Amount',
+                    'date' => 'Date',
+                    'method' => 'Payment Method',
+                    'donor' => 'Recipient Name',
+                    'fund' => 'Fund',
+                    'purpose' => 'Purpose',
+                ],
+            ],
+        ];
+
+        $commonSettings = $organization->common_setting ?? [];
+        if (is_string($commonSettings)) {
+            $commonSettings = json_decode($commonSettings, true, 512, JSON_UNESCAPED_UNICODE) ?? [];
+        }
+
+        $receiptSettings = array_replace_recursive(
+            $defaultReceiptSettings,
+            $commonSettings['receipt'] ?? []
+        );
 
         $query = Transaction::with(['createdBy', 'updatedBy', 'donor', 'fund'])
             ->where('transactions.organization_id', $organization_id);
@@ -48,12 +113,12 @@ class TransactionController extends Controller
             $query->whereIn('status', (array)$request->statuses);
         }
 
-        // Apply payment method filter (single value now)
+        // Apply payment method filter
         if ($request->has('payment_method') && $request->payment_method) {
             $query->where('payment_method', $request->payment_method);
         }
 
-        // Apply created by filter (single value now)
+        // Apply created by filter
         if ($request->has('created_by') && $request->created_by) {
             $query->whereHas('createdBy', function ($q) use ($request) {
                 $q->where('name', $request->created_by);
@@ -86,7 +151,13 @@ class TransactionController extends Controller
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
-            'organization' => $organization,
+            'organization' => [
+                'name' => $organization->name,
+                'slogan' => $organization->slogan ?? 'Helping communities grow',
+                'logo_path' => $organization->logo_path ? Storage::url($organization->logo_path) : null,
+                'currency' => $organization->currency ?? 'BDT',
+            ],
+            'receiptSettings' => $receiptSettings,
             'filters' => $request->all(),
             'permissions' => [
                 'view' => auth()->user()->can('transactions.view'),
