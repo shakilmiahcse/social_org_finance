@@ -10,10 +10,10 @@ import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Swal from 'sweetalert2';
-import AddFundModal from './create.vue';
-import EditFundModal from './edit.vue';
+import AddFundModal from './Create.vue';
+import EditFundModal from './Eedit.vue';
 import { useToast } from 'vue-toastification';
-import ViewFundModal from './view.vue';
+import ViewFundModal from './View.vue';
 
 // Refs
 const toast = useToast();

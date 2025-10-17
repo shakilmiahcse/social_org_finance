@@ -7,8 +7,8 @@ import 'vue3-easy-data-table/dist/style.css';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
-import AddUserModal from './create.vue';
-import EditUserModal from './edit.vue';
+import AddUserModal from './Create.vue';
+import EditUserModal from './Edit.vue';
 
 const toast = useToast();
 const searchTerm = ref('');

@@ -7,8 +7,8 @@ import 'vue3-easy-data-table/dist/style.css';
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
-import AddRoleModal from './create.vue';
-import EditRoleModal from './edit.vue';
+import AddRoleModal from './Create.vue';
+import EditRoleModal from './Edit.vue';
 
 // Refs
 const toast = useToast();

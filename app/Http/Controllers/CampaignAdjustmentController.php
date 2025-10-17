@@ -97,7 +97,7 @@ class CampaignAdjustmentController extends Controller
         })
         ->values();
 
-        return Inertia::render('CampaignAdjustments/create', [
+        return Inertia::render('CampaignAdjustments/Create', [
             'mainFunds' => $mainFunds,
             'campaignFunds' => $campaignFunds
         ]);

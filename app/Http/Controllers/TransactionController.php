@@ -108,7 +108,7 @@ class TransactionController extends Controller
         $donors = Donor::getDropdown();
         $funds = Fund::getDropdown();
 
-        return Inertia::render('Transactions/create', [
+        return Inertia::render('Transactions/Create', [
             'donors' => $donors,
             'funds' => $funds
         ]);

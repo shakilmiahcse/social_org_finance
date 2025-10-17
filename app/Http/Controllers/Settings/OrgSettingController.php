@@ -20,7 +20,7 @@ class OrgSettingController extends Controller
         $user = request()->user();
         $organization = $user->organization()->first();
 
-        return Inertia::render('settings/org', [
+        return Inertia::render('settings/Org', [
             'organization' => $organization,
             'timezones' => \DateTimeZone::listIdentifiers(),
             'currencies' => ['USD', 'EUR', 'BDT', 'GBP'],

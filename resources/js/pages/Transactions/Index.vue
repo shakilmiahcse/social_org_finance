@@ -10,9 +10,9 @@ import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import Swal from 'sweetalert2';
-import EditTransactionModal from './edit.vue';
+import EditTransactionModal from './Edit.vue';
 import { useToast } from 'vue-toastification';
-import ViewTransactionModal from './view.vue';
+import ViewTransactionModal from './View.vue';
 import ReceiptModal from './ReceiptModal.vue';
 import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
@@ -82,28 +82,28 @@ const createdBys = computed(() => {
 // Update the watcher to use the new single-value filters
 watch([dateRange, selectedTypes, selectedStatuses, selectedPaymentMethod, selectedCreatedBy], () => {
     const params: Record<string, any> = {};
-    
+
     if (dateRange.value[0] && dateRange.value[1]) {
         params.start_date = dateRange.value[0].toISOString().split('T')[0];
         params.end_date = dateRange.value[1].toISOString().split('T')[0];
     }
-    
+
     if (selectedTypes.value.length > 0) {
         params.types = selectedTypes.value;
     }
-    
+
     if (selectedStatuses.value.length > 0) {
         params.statuses = selectedStatuses.value;
     }
-    
+
     if (selectedPaymentMethod.value) {
         params.payment_method = selectedPaymentMethod.value;
     }
-    
+
     if (selectedCreatedBy.value) {
         params.created_by = selectedCreatedBy.value;
     }
-    
+
     router.get('/transactions', params, {
         preserveState: true,
         replace: true,
@@ -123,7 +123,7 @@ const resetFilters = () => {
 // Update the mounted hook to initialize dropdown values
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
-    
+
     // Initialize filters from props if they exist
     if (props.filters.types) {
         selectedTypes.value = Array.isArray(props.filters.types) ? props.filters.types : [props.filters.types];
@@ -319,7 +319,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                     <div class="flex gap-2">
                         <input v-model="searchTerm" type="text" placeholder="Search transactions..."
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
-                        <button @click="isFilterExpanded = !isFilterExpanded" 
+                        <button @click="isFilterExpanded = !isFilterExpanded"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition flex items-center">
                             <font-awesome-icon :icon="['fas', 'filter']" class="mr-1" />
                             Filter
@@ -335,15 +335,15 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                             Reset All Filters
                         </button>
                     </div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         <!-- Date Range Filter -->
                         <div>
                             <h4 class="font-semibold mb-2 text-gray-700">Date Range</h4>
-                            <Datepicker 
-                                v-model="dateRange" 
-                                range 
-                                :enable-time-picker="false" 
+                            <Datepicker
+                                v-model="dateRange"
+                                range
+                                :enable-time-picker="false"
                                 auto-apply
                                 placeholder="Select date range"
                                 class="w-full"
@@ -353,14 +353,14 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         <!-- Payment Method Filter -->
                         <div>
                             <h4 class="font-semibold mb-2 text-gray-700">Payment Method</h4>
-                            <select 
-                                v-model="selectedPaymentMethod" 
+                            <select
+                                v-model="selectedPaymentMethod"
                                 class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:border-blue-100"
                             >
                                 <option value="">All Payment Methods</option>
-                                <option 
-                                    v-for="method in paymentMethods" 
-                                    :key="method" 
+                                <option
+                                    v-for="method in paymentMethods"
+                                    :key="method"
                                     :value="method"
                                 >
                                     {{ method }}
@@ -371,14 +371,14 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         <!-- Created By Filter -->
                         <div>
                             <h4 class="font-semibold mb-2 text-gray-700">Created By</h4>
-                            <select 
-                                v-model="selectedCreatedBy" 
+                            <select
+                                v-model="selectedCreatedBy"
                                 class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:border-blue-100"
                             >
                                 <option value="">All Creators</option>
-                                <option 
-                                    v-for="creator in createdBys" 
-                                    :key="creator" 
+                                <option
+                                    v-for="creator in createdBys"
+                                    :key="creator"
                                     :value="creator"
                                 >
                                     {{ creator }}
@@ -391,9 +391,9 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                             <h4 class="font-semibold mb-2 text-gray-700">Type</h4>
                             <div class="space-y-2">
                                 <label v-for="type in types" :key="type" class="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        v-model="selectedTypes" 
+                                    <input
+                                        type="checkbox"
+                                        v-model="selectedTypes"
                                         :value="type"
                                         class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
                                     >
@@ -407,9 +407,9 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                             <h4 class="font-semibold mb-2 text-gray-700">Status</h4>
                             <div class="space-y-2">
                                 <label v-for="status in statuses" :key="status" class="flex items-center">
-                                    <input 
-                                        type="checkbox" 
-                                        v-model="selectedStatuses" 
+                                    <input
+                                        type="checkbox"
+                                        v-model="selectedStatuses"
                                         :value="status"
                                         class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 h-4 w-4"
                                     >

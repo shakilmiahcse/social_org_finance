@@ -11,7 +11,7 @@ import { saveAs } from 'file-saver';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import Swal from 'sweetalert2';
 import { useToast } from 'vue-toastification';
-import ViewAdjustmentModal from './view.vue';
+import ViewAdjustmentModal from './View.vue';
 
 const toast = useToast();
 const searchTerm = ref('');
