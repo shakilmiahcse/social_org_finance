@@ -215,7 +215,7 @@ const transactionTrendsChartData = computed(() => {
 
 const donationDistributionChartData = computed(() => {
     return {
-        labels: donationDistribution.value.map(item => item.amount_range),
+        labels: donationDistribution.value.map(item => item.range),
         datasets: [
             {
                 label: 'Donation Amount',
