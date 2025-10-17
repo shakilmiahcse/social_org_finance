@@ -58,24 +58,24 @@ const bloodGroups = computed(() => {
 
 const filteredDonors = computed(() => {
   let result = props.donors;
-  
+
   // Apply search filter
   if (searchTerm.value) {
     const term = searchTerm.value.toLowerCase();
-    result = result.filter(d => 
+    result = result.filter(d =>
       d.name.toLowerCase().includes(term) ||
       (d.email && d.email.toLowerCase().includes(term)) ||
       (d.phone && d.phone.toLowerCase().includes(term))
     );
   }
-  
+
   // Apply blood group filter if any selected
   if (selectedBloodGroups.value.length > 0) {
-    result = result.filter(d => 
+    result = result.filter(d =>
       selectedBloodGroups.value.includes(d.blood_group)
     );
   }
-  
+
   return result;
 });
 
@@ -111,6 +111,10 @@ const editDonor = (id: number) => {
         selectedDonor.value = donor;
         editDonorModal.value.open();
     }
+};
+
+const viewHistory = (id: number) => {
+    router.visit(`/donors/${id}/history`);
 };
 
 const deleteDonor = (id: number) => {
@@ -222,7 +226,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                     <div class="flex gap-2">
                         <input v-if="props.permissions.view" v-model="searchTerm" type="text" placeholder="Search donors..."
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
-                        <button @click="isFilterExpanded = !isFilterExpanded" 
+                        <button @click="isFilterExpanded = !isFilterExpanded"
                             class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded transition flex items-center">
                             <font-awesome-icon :icon="['fas', 'filter']" class="mr-1" />
                             Filter
@@ -238,13 +242,13 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                             <h4 class="font-semibold mb-2 text-gray-700">Blood Group</h4>
                             <div class="flex flex-wrap gap-3">
                                 <label v-for="group in bloodGroups" :key="group" class="inline-flex items-center">
-                                    <input type="checkbox" v-model="selectedBloodGroups" :value="group" 
+                                    <input type="checkbox" v-model="selectedBloodGroups" :value="group"
                                         class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50 h-4 w-4">
                                     <span class="ml-2 font-medium text-gray-800">{{ group }}</span>
                                 </label>
                             </div>
                         </div>
-                        <button v-if="selectedBloodGroups.length > 0" @click="selectedBloodGroups = []" 
+                        <button v-if="selectedBloodGroups.length > 0" @click="selectedBloodGroups = []"
                             class="text-red-500 hover:text-red-700 text-sm font-medium">
                             Clear Filters
                         </button>
@@ -277,6 +281,12 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             <font-awesome-icon :icon="['fas', 'eye']" />
                                             View
+                                        </button>
+                                        <!-- History Button -->
+                                        <button v-if="props.permissions.view" @click.stop="viewHistory(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <font-awesome-icon :icon="['fas', 'history']" />
+                                            History
                                         </button>
                                         <button v-if="props.permissions.edit" @click.stop="editDonor(id)"
                                             class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">

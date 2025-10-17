@@ -18,6 +18,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/donors/{donor}/history', [DonorController::class, 'history'])->name('donors.history');
     Route::get('/donors/dropdown', [DonorController::class, 'getDropdown']);
     Route::resource('donors', DonorController::class);
 

@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Donor;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DonorController extends Controller
 {
@@ -176,6 +178,77 @@ class DonorController extends Controller
         }
         $donor->delete();
         return redirect()->route('donors.index')->with('success', 'Donor deleted successfully.');
+    }
+
+    public function history(Donor $donor)
+    {
+        if (!auth()->user()->can('donors.view')) {
+            abort(403, 'You do not have permission to view donor history.');
+        }
+
+        // Verify the donor belongs to the organization
+        $organization_id = request()->session()->get("organization_id");
+        if ($donor->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to view this donor.');
+        }
+
+        // Get transactions (assuming donations are 'credit' type)
+        $transactions = Transaction::where('donor_id', $donor->id)
+            ->with(['createdBy', 'fund'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($txn) {
+                return [
+                    'id' => $txn->id,
+                    'txn_no' => $txn->txn_id ?? $txn->id, // Fallback if txn_id is not present
+                    'type' => $txn->type,
+                    'amount' => $txn->amount,
+                    'fund' => $txn->fund ? ['name' => $txn->fund->name] : null,
+                    'purpose' => $txn->purpose,
+                    'payment_method' => $txn->payment_method,
+                    'reference' => $txn->reference,
+                    'status' => $txn->status,
+                    'created_at' => $txn->created_at,
+                    'createdBy' => $txn->createdBy ? ['name' => $txn->createdBy->name] : null,
+                ];
+            });
+
+        // Calculate summary
+        $summary = [
+            'total_donated' => Transaction::where('donor_id', $donor->id)
+                ->where('type', 'credit')
+                ->where('status', 'completed')
+                ->sum('amount'),
+            'total_raised' => Transaction::where('donor_id', $donor->id)
+                ->where('type', 'debit')
+                ->where('status', 'completed')
+                ->sum('amount'),
+            'total_transactions' => Transaction::where('donor_id', $donor->id)->count(),
+        ];
+
+        // Get all donors for dropdown with total donated in brackets
+        $donors = Donor::where('donors.organization_id', $organization_id)
+            ->select(
+                'donors.id',
+                'donors.name',
+                'donors.phone',
+            )
+            ->groupBy('donors.id', 'donors.name', 'donors.phone')
+            ->orderBy('donors.name', 'asc')
+            ->get()
+            ->map(function ($donor) {
+                return [
+                    'id' => $donor->id,
+                    'name' => $donor->name . ($donor->phone ? ' (' . $donor->phone . ')' : '')
+                ];
+            });
+
+        return Inertia::render('Donors/History', [
+            'donors' => $donors,
+            'transactions' => $transactions,
+            'summary' => $summary,
+            'current_donor_id' => $donor->id,
+        ]);
     }
 
 }

@@ -122,14 +122,25 @@ class FundController extends Controller
         if (!auth()->user()->can('funds.view')) {
             abort(403, 'You do not have permission to view funds.');
         }
+
         $organization_id = request()->session()->get("organization_id");
+
         try {
-            $funds = Fund::where('organization_id', $organization_id)->latest()
+            $funds = Fund::leftJoin('transactions as t', 'funds.id', '=', 't.fund_id')
+                ->where('funds.organization_id', $organization_id)
+                ->select(
+                    'funds.id',
+                    'funds.name',
+                    DB::raw("SUM(CASE WHEN t.type = 'credit' AND t.status = 'completed' THEN t.amount ELSE 0 END) -
+                            SUM(CASE WHEN t.type = 'debit' AND t.status = 'completed' THEN t.amount ELSE 0 END) as total_sum_amount")
+                )
+                ->groupBy('funds.id', 'funds.name')
+                ->orderBy('funds.created_at', 'desc')
                 ->get()
                 ->map(function ($fund) {
                     return [
                         'id' => $fund->id,
-                        'name' => $fund->name
+                        'name' => $fund->name . ' (' . number_format($fund->total_sum_amount, 2) . ')'
                     ];
                 });
 
@@ -202,9 +213,25 @@ class FundController extends Controller
             'current_balance' => $fund->getBalance(),
         ];
 
-        // Get all funds for dropdown
-        $funds = Fund::where('organization_id', $organization_id)
-            ->get(['id', 'name']);
+        // Get all funds for dropdown with total amount in brackets
+        $funds = Fund::leftJoin('transactions as t', 'funds.id', '=', 't.fund_id')
+            ->where('funds.organization_id', $organization_id)
+            ->select(
+                'funds.id',
+                'funds.name',
+                DB::raw("SUM(CASE WHEN t.type = 'credit' AND t.status = 'completed' THEN t.amount ELSE 0 END) -
+                        SUM(CASE WHEN t.type = 'debit' AND t.status = 'completed' THEN t.amount ELSE 0 END) as total_sum_amount")
+            )
+            ->groupBy('funds.id', 'funds.name')
+            ->orderBy('funds.name', 'asc')
+            ->get()
+            ->map(function ($fund) {
+                return [
+                    'id' => $fund->id,
+                    'name' => $fund->name . ' (' . number_format($fund->total_sum_amount, 2) . ')'
+                ];
+            });
+
 
         return Inertia::render('Funds/History', [
             'funds' => $funds,

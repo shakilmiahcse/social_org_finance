@@ -1,3 +1,4 @@
+<!-- Donors/History.vue (new file) -->
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
@@ -15,7 +16,7 @@ const toast = useToast();
 
 // Props
 const props = defineProps({
-    funds: {
+    donors: {
         type: Array as () => Array<{
             id: number;
             name: string;
@@ -28,33 +29,30 @@ const props = defineProps({
             txn_no: string;
             type: 'credit' | 'debit';
             amount: number;
-            balance: number;
+            fund?: { name: string };
             purpose: string;
             payment_method: string;
             reference: string;
             status: string;
             created_at: string;
-            donor?: { name: string };
             createdBy?: { name: string };
         }>,
         required: true
     },
     summary: {
         type: Object as () => {
-            total_income: number;
-            total_expense: number;
-            current_balance: number;
+            total_donated: number;
         },
         required: true
     },
-    current_fund_id: {
+    current_donor_id: {
         type: Number,
         required: true
     }
 });
 
 // Refs
-const selectedFundId = ref(props.current_fund_id);
+const selectedDonorId = ref(props.current_donor_id);
 const searchTerm = ref('');
 
 // Computed properties
@@ -64,7 +62,7 @@ const filteredTransactions = computed(() => {
     const term = searchTerm.value.toLowerCase();
     return props.transactions.filter(txn =>
         txn.txn_no.toLowerCase().includes(term) ||
-        (txn.donor?.name.toLowerCase().includes(term)) ||
+        (txn.fund?.name.toLowerCase().includes(term)) ||
         txn.purpose.toLowerCase().includes(term) ||
         txn.payment_method.toLowerCase().includes(term) ||
         txn.reference.toLowerCase().includes(term)
@@ -72,8 +70,8 @@ const filteredTransactions = computed(() => {
 });
 
 // Methods
-const handleFundChange = (fundId: number) => {
-    router.visit(`/funds/${fundId}/history`, {
+const handleDonorChange = (donorId: number) => {
+    router.visit(`/donors/${donorId}/history`, {
         preserveState: true,
         preserveScroll: true
     });
@@ -81,7 +79,7 @@ const handleFundChange = (fundId: number) => {
 
 const exportToExcel = () => {
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Fund History');
+    const worksheet = workbook.addWorksheet('Donor History');
 
     // Add headers
     worksheet.columns = [
@@ -89,8 +87,7 @@ const exportToExcel = () => {
         { header: 'TXN No', key: 'txn_no', width: 15 },
         { header: 'Type', key: 'type', width: 10 },
         { header: 'Amount', key: 'amount', width: 15 },
-        { header: 'Balance', key: 'balance', width: 15 },
-        { header: 'Donor/Raiser', key: 'party', width: 25 },
+        { header: 'Fund', key: 'fund', width: 25 },
         { header: 'Purpose', key: 'purpose', width: 30 },
         { header: 'Payment Method', key: 'payment_method', width: 15 },
         { header: 'Reference', key: 'reference', width: 15 },
@@ -105,8 +102,7 @@ const exportToExcel = () => {
             txn_no: txn.txn_no,
             type: txn.type,
             amount: txn.amount,
-            balance: txn.balance,
-            party: txn.donor?.name || 'N/A',
+            fund: txn.fund?.name || 'N/A',
             purpose: txn.purpose,
             payment_method: txn.payment_method,
             reference: txn.reference,
@@ -118,14 +114,10 @@ const exportToExcel = () => {
     // Add summary section
     worksheet.addRow([]); // Empty row
     worksheet.addRow(['Summary', '', '', '', '', '', '', '', '']);
-    worksheet.addRow(['Total Income', props.summary.total_income]);
-    worksheet.addRow(['Total Expense', props.summary.total_expense]);
-    worksheet.addRow(['Current Balance', props.summary.current_balance]);
+    worksheet.addRow(['Total Donated', props.summary.total_donated]);
 
     // Style summary section
     const summaryRows = [
-        worksheet.rowCount - 3,
-        worksheet.rowCount - 2,
         worksheet.rowCount - 1
     ];
 
@@ -135,26 +127,24 @@ const exportToExcel = () => {
 
     // Generate Excel file
     workbook.xlsx.writeBuffer().then(buffer => {
-        saveAs(new Blob([buffer]), `fund_history_${props.funds.find(f => f.id === selectedFundId.value)?.name || 'all'}.xlsx`);
+        saveAs(new Blob([buffer]), `donor_history_${props.donors.find(d => d.id === selectedDonorId.value)?.name || 'all'}.xlsx`);
     });
 };
 
 const exportToPDF = () => {
     const doc = new jsPDF();
-    const fundName = props.funds.find(f => f.id === selectedFundId.value)?.name || 'All Funds';
+    const donorName = props.donors.find(d => d.id === selectedDonorId.value)?.name || 'All Donors';
 
     // Add title
     doc.setFontSize(16);
-    doc.text(`Fund History - ${fundName}`, 14, 15);
+    doc.text(`Donor History - ${donorName}`, 14, 15);
 
     // Add summary section
     doc.setFontSize(12);
     doc.text('Summary', 14, 25);
 
     const summaryData = [
-        ['Total Income', props.summary.total_income],
-        ['Total Expense', props.summary.total_expense],
-        ['Current Balance', props.summary.current_balance]
+        ['Total Donated', props.summary.total_donated]
     ];
 
     autoTable(doc, {
@@ -173,8 +163,7 @@ const exportToPDF = () => {
         txn.txn_no,
         txn.type.toUpperCase(),
         txn.amount,
-        txn.balance,
-        txn.donor?.name || 'N/A',
+        txn.fund?.name || 'N/A',
         txn.purpose,
         txn.payment_method,
         txn.reference,
@@ -185,7 +174,7 @@ const exportToPDF = () => {
     autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 20,
         head: [
-            ['Date', 'TXN No', 'Type', 'Amount', 'Balance', 'Donor/Raiser', 'Purpose', 'Payment', 'Reference', 'Status', 'Created By']
+            ['Date', 'TXN No', 'Type', 'Amount', 'Fund', 'Purpose', 'Payment', 'Reference', 'Status', 'Created By']
         ],
         body: transactionsData,
         styles: { fontSize: 8 },
@@ -195,23 +184,22 @@ const exportToPDF = () => {
             1: { cellWidth: 12 },
             2: { cellWidth: 8 },
             3: { cellWidth: 10 },
-            4: { cellWidth: 10 },
-            5: { cellWidth: 20 },
-            6: { cellWidth: 25 },
-            7: { cellWidth: 10 },
-            8: { cellWidth: 12 },
-            9: { cellWidth: 10 },
-            10: { cellWidth: 15 }
+            4: { cellWidth: 20 },
+            5: { cellWidth: 25 },
+            6: { cellWidth: 10 },
+            7: { cellWidth: 12 },
+            8: { cellWidth: 10 },
+            9: { cellWidth: 15 }
         }
     });
 
-    doc.save(`fund_history_${fundName.replace(' ', '_')}.pdf`);
+    doc.save(`donor_history_${donorName.replace(' ', '_')}.pdf`);
 };
 
 // Breadcrumbs
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
-    { title: 'Funds', href: '/funds' },
-    { title: 'History', href: `/funds/${selectedFundId.value}/history` }
+    { title: 'Donors/Raisers', href: '/donors' },
+    { title: 'History', href: `/donors/${selectedDonorId.value}/history` }
 ]);
 
 // Format currency
@@ -225,23 +213,23 @@ const formatCurrency = (amount: number) => {
 </script>
 
 <template>
-    <Head :title="`Fund History - ${funds.find(f => f.id === selectedFundId)?.name || ''}`" />
+    <Head :title="`Donor History - ${donors.find(d => d.id === selectedDonorId)?.name || ''}`" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-4 space-y-4">
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
-                <!-- Header with Fund Selector -->
+                <!-- Header with Donor Selector -->
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <h1 class="text-3xl font-bold">Fund History</h1>
+                    <h1 class="text-3xl font-bold">Donor/Raiser History</h1>
 
                     <div class="w-full md:w-80">
-                        <label class="block text-base font-medium text-gray-800 mb-2">Select Fund</label>
+                        <label class="block text-base font-medium text-gray-800 mb-2">Select Donor/Raiser</label>
                         <v-select
-                            v-model="selectedFundId"
-                            :options="funds"
+                            v-model="selectedDonorId"
+                            :options="donors"
                             label="name"
-                            :reduce="fund => fund.id"
-                            @update:modelValue="handleFundChange"
-                            placeholder="Select a fund"
+                            :reduce="donor => donor.id"
+                            @update:modelValue="handleDonorChange"
+                            placeholder="Select a donor/raiser"
                             class="w-full border border-gray-300 rounded-md shadow-sm"
                         ></v-select>
                     </div>
@@ -250,25 +238,13 @@ const formatCurrency = (amount: number) => {
                 <!-- Summary Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <h3 class="text-sm font-medium text-green-800">Total Income</h3>
-                        <p class="text-2xl font-semibold text-green-600">{{ formatCurrency(summary.total_income) }}</p>
-                    </div>
-
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <h3 class="text-sm font-medium text-red-800">Total Expense</h3>
-                        <p class="text-2xl font-semibold text-red-600">{{ formatCurrency(summary.total_expense) }}</p>
-                    </div>
-
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h3 class="text-sm font-medium text-blue-800">Current Balance</h3>
-                        <p class="text-2xl font-semibold text-blue-600">{{ formatCurrency(summary.current_balance) }}</p>
+                        <h3 class="text-sm font-medium text-green-800">Total Donated</h3>
+                        <p class="text-2xl font-semibold text-green-600">{{ formatCurrency(summary.total_donated) }}</p>
                     </div>
                 </div>
 
                 <!-- Search and Export -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-
-
                     <div class="flex gap-2">
                         <button
                             @click="exportToExcel"
@@ -309,8 +285,7 @@ const formatCurrency = (amount: number) => {
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TXN No</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Donor/Raiser</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fund</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
@@ -343,11 +318,8 @@ const formatCurrency = (amount: number) => {
                                 }">
                                     {{ formatCurrency(txn.amount) }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ formatCurrency(txn.balance) }}
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ txn.donor?.name || 'N/A' }}
+                                    {{ txn.fund?.name || 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ txn.purpose || 'N/A' }}
@@ -375,7 +347,7 @@ const formatCurrency = (amount: number) => {
                                 </td>
                             </tr>
                             <tr v-if="filteredTransactions.length === 0">
-                                <td colspan="11" class="px-6 py-4 text-center text-sm text-gray-500">
+                                <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500">
                                     No transactions found
                                 </td>
                             </tr>
