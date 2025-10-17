@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm, Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 const props = defineProps<{
     receiptSettings: {
@@ -30,6 +30,11 @@ const props = defineProps<{
         view: boolean;
         update: boolean;
     };
+    organization: {
+        name: string;
+        currency: string;
+        logo_path: string | null;
+    };
 }>();
 
 const form = useForm({
@@ -38,27 +43,29 @@ const form = useForm({
 });
 
 const iconOptions = [
-    'hand-holding-heart',
-    'receipt',
-    'donate',
-    'hands-helping',
-    'gift',
-    'building',
-    'university',
-    'church',
-    'money-bill-wave',
-    'credit-card',
-    'wallet',
-    'handshake',
+    { value: 'hand-holding-heart', label: 'Hand Holding Heart' },
+    { value: 'receipt', label: 'Receipt' },
+    { value: 'donate', label: 'Donate' },
+    { value: 'hands-helping', label: 'Hands Helping' },
+    { value: 'gift', label: 'Gift' },
+    { value: 'building', label: 'Building' },
+    { value: 'university', label: 'University' },
+    { value: 'church', label: 'Church' },
+    { value: 'money-bill-wave', label: 'Money Bill Wave' },
+    { value: 'credit-card', label: 'Credit Card' },
+    { value: 'wallet', label: 'Wallet' },
+    { value: 'handshake', label: 'Handshake' },
 ];
 
 const submit = () => {
     form.post(route('receipt.update'), {
         preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
+        },
     });
 };
 
-// Preview functionality
 const activeTab = ref('credit');
 const previewData = {
     credit: {
@@ -85,11 +92,21 @@ const previewData = {
     }
 };
 
+const currencySymbol = computed(() => {
+    const currencyMap: { [key: string]: string } = {
+        'USD': '$',
+        'EUR': '€',
+        'BDT': '৳',
+        'GBP': '£'
+    };
+    return currencyMap[props.organization.currency] || '৳';
+});
+
 const formatCurrency = (amount: string) => {
-    return '৳ ' + parseFloat(amount).toLocaleString('en-US', {
+    return `${currencySymbol.value} ${parseFloat(amount).toLocaleString('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
-    });
+    })}`;
 };
 
 const formatDate = (dateString: string) => {
@@ -100,7 +117,7 @@ const formatDate = (dateString: string) => {
         hour: '2-digit',
         minute: '2-digit'
     };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    return new Date(dateString).toLocaleDateString('bn-BD', options);
 };
 </script>
 
@@ -117,11 +134,8 @@ const formatDate = (dateString: string) => {
                     </TabsList>
                     <form @submit.prevent="submit" class="space-y-6">
                         <TabsContent value="credit" class="space-y-6">
-                            <!-- Credit Receipt Settings -->
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <!-- Settings Column -->
                                 <div class="space-y-6">
-                                    <!-- Header Settings -->
                                     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                         <h3 class="text-lg font-medium mb-4">Header Settings</h3>
                                         <div class="space-y-4">
@@ -150,8 +164,11 @@ const formatDate = (dateString: string) => {
                                                         <SelectValue placeholder="Select icon" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem v-for="icon in iconOptions" :key="icon" :value="icon">
-                                                            {{ icon }}
+                                                        <SelectItem v-for="icon in iconOptions" :key="icon.value" :value="icon.value">
+                                                            <div class="flex items-center">
+                                                                <font-awesome-icon :icon="['fas', icon.value]" class="mr-2" />
+                                                                {{ icon.label }}
+                                                            </div>
                                                         </SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -159,7 +176,6 @@ const formatDate = (dateString: string) => {
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- Body Settings -->
                                     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                         <h3 class="text-lg font-medium mb-4">Body Settings</h3>
                                         <div class="space-y-4">
@@ -195,16 +211,13 @@ const formatDate = (dateString: string) => {
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Preview Column -->
                                 <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                     <h3 class="text-lg font-medium mb-4">Preview</h3>
                                     <div class="relative overflow-hidden p-0" :style="{ backgroundColor: form.receipt.credit.body.background_color }">
-                                        <!-- Watermark -->
                                         <div class="absolute -left-20 -top-20 text-9xl font-bold transform -rotate-30 select-none pointer-events-none"
                                             :style="{ color: form.receipt.credit.body.watermark_color, opacity: '0.1' }">
                                             {{ form.receipt.credit.body.watermark_text }}
                                         </div>
-                                        <!-- Header -->
                                         <div class="p-6 text-white relative" :style="{ backgroundColor: form.receipt.credit.header.color }">
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center">
@@ -222,17 +235,15 @@ const formatDate = (dateString: string) => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <!-- Body -->
                                         <div class="p-6 relative">
-                                            <!-- Organization Info -->
                                             <div class="mb-8 text-center">
                                                 <div class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-gray-100/50 overflow-hidden bg-white flex items-center justify-center">
-                                                    <font-awesome-icon :icon="['fas', 'building']" class="text-gray-600 text-3xl" />
+                                                    <img v-if="props.organization.logo_path" :src="props.organization.logo_path" class="w-full h-full object-cover" />
+                                                    <font-awesome-icon v-else :icon="['fas', 'building']" class="text-gray-600 text-3xl" />
                                                 </div>
-                                                <h2 class="text-xl font-bold text-gray-800">Your Organization</h2>
+                                                <h2 class="text-xl font-bold text-gray-800">{{ props.organization.name }}</h2>
                                                 <p class="text-gray-600">Helping communities grow</p>
                                             </div>
-                                            <!-- Transaction Details -->
                                             <div class="rounded-lg p-5 mb-6" :style="{ backgroundColor: form.receipt.credit.body.transaction_style }">
                                                 <div class="flex justify-between items-center mb-4 pb-4" :style="{ borderBottomColor: form.receipt.credit.body.transaction_style }">
                                                     <div>
@@ -269,20 +280,14 @@ const formatDate = (dateString: string) => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- Footer -->
                                             <div class="text-center">
-                                                <p class="text-gray-600 text-sm mb-1">
-                                                    {{ form.receipt.credit.footer.message }}
-                                                </p>
-                                                <p class="text-gray-500 text-xs">
-                                                    {{ form.receipt.credit.footer.note }}
-                                                </p>
+                                                <p class="text-gray-600 text-sm mb-1">{{ form.receipt.credit.footer.message }}</p>
+                                                <p class="text-gray-500 text-xs">{{ form.receipt.credit.footer.note }}</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <!-- Label Settings -->
                             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                 <h3 class="text-lg font-medium mb-4">Label Settings</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -318,7 +323,6 @@ const formatDate = (dateString: string) => {
                                     </div>
                                 </div>
                             </div>
-                            <!-- Footer Settings -->
                             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                 <h3 class="text-lg font-medium mb-4">Footer Settings</h3>
                                 <div class="space-y-4">
@@ -337,11 +341,8 @@ const formatDate = (dateString: string) => {
                             </div>
                         </TabsContent>
                         <TabsContent value="debit" class="space-y-6">
-                            <!-- Debit Receipt Settings -->
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <!-- Settings Column -->
                                 <div class="space-y-6">
-                                    <!-- Header Settings -->
                                     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                         <h3 class="text-lg font-medium mb-4">Header Settings</h3>
                                         <div class="space-y-4">
@@ -370,8 +371,11 @@ const formatDate = (dateString: string) => {
                                                         <SelectValue placeholder="Select icon" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem v-for="icon in iconOptions" :key="icon" :value="icon">
-                                                            {{ icon }}
+                                                        <SelectItem v-for="icon in iconOptions" :key="icon.value" :value="icon.value">
+                                                            <div class="flex items-center">
+                                                                <font-awesome-icon :icon="['fas', icon.value]" class="mr-2" />
+                                                                {{ icon.label }}
+                                                            </div>
                                                         </SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -379,7 +383,6 @@ const formatDate = (dateString: string) => {
                                             </div>
                                         </div>
                                     </div>
-                                    <!-- Body Settings -->
                                     <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                         <h3 class="text-lg font-medium mb-4">Body Settings</h3>
                                         <div class="space-y-4">
@@ -415,16 +418,13 @@ const formatDate = (dateString: string) => {
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Preview Column -->
                                 <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                     <h3 class="text-lg font-medium mb-4">Preview</h3>
                                     <div class="relative overflow-hidden p-0" :style="{ backgroundColor: form.receipt.debit.body.background_color }">
-                                        <!-- Watermark -->
                                         <div class="absolute -left-20 -top-20 text-9xl font-bold transform -rotate-30 select-none pointer-events-none"
                                             :style="{ color: form.receipt.debit.body.watermark_color, opacity: '0.1' }">
                                             {{ form.receipt.debit.body.watermark_text }}
                                         </div>
-                                        <!-- Header -->
                                         <div class="p-6 text-white relative" :style="{ backgroundColor: form.receipt.debit.header.color }">
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center">
@@ -442,17 +442,15 @@ const formatDate = (dateString: string) => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <!-- Body -->
                                         <div class="p-6 relative">
-                                            <!-- Organization Info -->
                                             <div class="mb-8 text-center">
                                                 <div class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-gray-100/50 overflow-hidden bg-white flex items-center justify-center">
-                                                    <font-awesome-icon :icon="['fas', 'building']" class="text-gray-600 text-3xl" />
+                                                    <img v-if="props.organization.logo_path" :src="props.organization.logo_path" class="w-full h-full object-cover" />
+                                                    <font-awesome-icon v-else :icon="['fas', 'building']" class="text-gray-600 text-3xl" />
                                                 </div>
-                                                <h2 class="text-xl font-bold text-gray-800">Your Organization</h2>
+                                                <h2 class="text-xl font-bold text-gray-800">{{ props.organization.name }}</h2>
                                                 <p class="text-gray-600">Helping communities grow</p>
                                             </div>
-                                            <!-- Transaction Details -->
                                             <div class="rounded-lg p-5 mb-6" :style="{ backgroundColor: form.receipt.debit.body.transaction_style }">
                                                 <div class="flex justify-between items-center mb-4 pb-4" :style="{ borderBottomColor: form.receipt.debit.body.transaction_style }">
                                                     <div>
@@ -489,20 +487,14 @@ const formatDate = (dateString: string) => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- Footer -->
                                             <div class="text-center">
-                                                <p class="text-gray-600 text-sm mb-1">
-                                                    {{ form.receipt.debit.footer.message }}
-                                                </p>
-                                                <p class="text-gray-500 text-xs">
-                                                    {{ form.receipt.debit.footer.note }}
-                                                </p>
+                                                <p class="text-gray-600 text-sm mb-1">{{ form.receipt.debit.footer.message }}</p>
+                                                <p class="text-gray-500 text-xs">{{ form.receipt.debit.footer.note }}</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <!-- Label Settings -->
                             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                 <h3 class="text-lg font-medium mb-4">Label Settings</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -538,7 +530,6 @@ const formatDate = (dateString: string) => {
                                     </div>
                                 </div>
                             </div>
-                            <!-- Footer Settings -->
                             <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                                 <h3 class="text-lg font-medium mb-4">Footer Settings</h3>
                                 <div class="space-y-4">
@@ -556,7 +547,6 @@ const formatDate = (dateString: string) => {
                                 </div>
                             </div>
                         </TabsContent>
-                        <!-- Submit Button -->
                         <div v-if="props.can.update" class="flex items-center gap-4 justify-center">
                             <Button type="submit" :disabled="form.processing">
                                 <span v-if="!form.processing">Save Settings</span>

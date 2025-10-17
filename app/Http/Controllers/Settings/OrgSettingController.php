@@ -38,13 +38,13 @@ class OrgSettingController extends Controller
         }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'logo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:50|dimensions:max_width=500,max_height=500',
+            'logo_path' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048|dimensions:max_width=500,max_height=500',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'website' => 'nullable|url|max:255',
-            'timezone' => 'nullable|string|max:100',
-            'currency' => 'nullable|string|max:10',
+            'timezone' => 'nullable|string|in:' . implode(',', \DateTimeZone::listIdentifiers()),
+            'currency' => 'nullable|string|in:USD,EUR,BDT,GBP',
             'slogan' => 'nullable|string|max:255',
         ]);
 
@@ -54,27 +54,18 @@ class OrgSettingController extends Controller
 
         if ($request->hasFile('logo_path')) {
             $logo = $request->file('logo_path');
-            $filename = Str::random(40) . '.' . $logo->getClientOriginalExtension();
-            $destinationPath = public_path('uploads/logos');
+            $filename = Str::uuid() . '.' . $logo->getClientOriginalExtension();
+            $path = $logo->storeAs('logos', $filename, 'public');
 
-            // Ensure the directory exists
-            if (!file_exists($destinationPath)) {
-                mkdir($destinationPath, 0755, true);
+            if ($organization->logo_path) {
+                Storage::disk('public')->delete($organization->logo_path);
             }
 
-            $logo->move($destinationPath, $filename);
-
-            // Delete old logo if exists
-            if ($organization->logo_path && file_exists(public_path($organization->logo_path))) {
-                @unlink(public_path($organization->logo_path));
-            }
-
-            $data['logo_path'] = 'uploads/logos/' . $filename;
+            $data['logo_path'] = $path;
         }
 
         $organization->update($data);
 
-        // In your update method, after the update:
         activity()
             ->causedBy(auth()->user())
             ->performedOn($organization)
@@ -84,14 +75,13 @@ class OrgSettingController extends Controller
             ])
             ->log('updated organization settings');
 
-
         session([
             'organization_id' => $organization->id,
             'organization_name' => $organization->name,
             'organization_email' => $organization->email,
             'organization_phone' => $organization->phone,
             'organization_address' => $organization->address,
-            'organization_logo_path' => $organization->logo_path,
+            'organization_logo_path' => $organization->logo_path ? Storage::url($organization->logo_path) : null,
             'organization_website' => $organization->website,
             'organization_timezone' => $organization->timezone,
             'organization_currency' => $organization->currency,
@@ -109,27 +99,26 @@ class OrgSettingController extends Controller
         }
         $user = request()->user();
         $organization = $user->organization()->first();
-        // Default settings for both credit and debit receipts
         $defaultSettings = [
             'credit' => [
                 'header' => [
                     'title' => 'অনুদান রসিদ',
                     'subtitle' => 'আপনার উদার সহায়তার জন্য ধন্যবাদ!',
-                    'color' => '#16a34a', // Default green hex color
+                    'color' => '#16a34a',
                     'icon' => 'hand-holding-heart',
                 ],
                 'body' => [
                     'watermark_text' => 'RECEIPT',
-                    'watermark_color' => '#22c55e', // Green-500
-                    'background_color' => '#f0fdf4', // Green-50
-                    'transaction_style' => '#dcfce7', // Green-100
+                    'watermark_color' => '#22c55e',
+                    'background_color' => '#f0fdf4',
+                    'transaction_style' => '#dcfce7',
                 ],
                 'footer' => [
                     'message' => 'আপনার সহযোগিতা আমাদের কাজ অব্যাহত রাখার অনুপ্রেরণা জোগায়।',
                     'note' => 'এই রসিদটি সংরক্ষণের জন্য একটি অফিসিয়াল ডকুমেন্ট।',
                 ],
                 'labels' => [
-                    'amount' => 'Transaction Amount',
+                    'amount' => 'অনুদানের পরিমাণ',
                     'date' => 'তারিখ',
                     'method' => 'অনুদান মাধ্যম',
                     'donor' => 'দাতার নাম',
@@ -141,21 +130,21 @@ class OrgSettingController extends Controller
                 'header' => [
                     'title' => 'পেমেন্ট রসিদ',
                     'subtitle' => 'আপনার পেমেন্টের জন্য ধন্যবাদ!',
-                    'color' => '#2563eb', // Default blue hex color
+                    'color' => '#2563eb',
                     'icon' => 'receipt',
                 ],
                 'body' => [
                     'watermark_text' => 'PAYMENT',
-                    'watermark_color' => '#3b82f6', // Blue-500
-                    'background_color' => '#eff6ff', // Blue-50
-                    'transaction_style' => '#dbeafe', // Blue-100
+                    'watermark_color' => '#3b82f6',
+                    'background_color' => '#eff6ff',
+                    'transaction_style' => '#dbeafe',
                 ],
                 'footer' => [
                     'message' => 'এই অর্থায়ন কল্যাণমূলক কার্যক্রমের উন্নয়নে ব্যবহৃত হয়েছে।',
                     'note' => 'এই রসিদটি সংরক্ষণের জন্য একটি অফিসিয়াল ডকুমেন্ট।',
                 ],
                 'labels' => [
-                    'amount' => 'Transaction Amount',
+                    'amount' => 'পেমেন্টের পরিমাণ',
                     'date' => 'তারিখ',
                     'method' => 'পেমেন্ট মাধ্যম',
                     'donor' => 'উত্তোলনকারীর নাম',
@@ -164,13 +153,24 @@ class OrgSettingController extends Controller
                 ],
             ],
         ];
-        // Merge with existing settings
-        $receiptSettings = array_merge_recursive(
+
+        $commonSettings = $organization->common_setting ?? [];
+        if (is_string($commonSettings)) {
+            $commonSettings = json_decode($commonSettings, true, 512, JSON_UNESCAPED_UNICODE) ?? [];
+        }
+
+        $receiptSettings = array_replace_recursive(
             $defaultSettings,
-            $organization->common_setting['receipt'] ?? []
+            $commonSettings['receipt'] ?? []
         );
+
         return Inertia::render('settings/Receipt', [
             'receiptSettings' => $receiptSettings,
+            'organization' => [
+                'name' => $organization->name,
+                'currency' => $organization->currency,
+                'logo_path' => $organization->logo_path ? Storage::url($organization->logo_path) : null,
+            ],
             'can' => [
                 'view' => auth()->user()->can('settings.view'),
                 'update' => auth()->user()->can('settings.update'),
@@ -183,11 +183,12 @@ class OrgSettingController extends Controller
         if (!auth()->user()->can('settings.update')) {
             abort(403, 'You do not have permission to update organization settings.');
         }
+
         $validated = $request->validate([
             'receipt.credit.header.title' => 'nullable|string|max:255',
             'receipt.credit.header.subtitle' => 'nullable|string|max:255',
             'receipt.credit.header.color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'receipt.credit.header.icon' => 'nullable|string|max:50',
+            'receipt.credit.header.icon' => 'nullable|string|in:' . implode(',', array_column($this->getIconOptions(), 'value')),
             'receipt.credit.body.watermark_text' => 'nullable|string|max:255',
             'receipt.credit.body.watermark_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'receipt.credit.body.background_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -203,7 +204,7 @@ class OrgSettingController extends Controller
             'receipt.debit.header.title' => 'nullable|string|max:255',
             'receipt.debit.header.subtitle' => 'nullable|string|max:255',
             'receipt.debit.header.color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'receipt.debit.header.icon' => 'nullable|string|max:50',
+            'receipt.debit.header.icon' => 'nullable|string|in:' . implode(',', array_column($this->getIconOptions(), 'value')),
             'receipt.debit.body.watermark_text' => 'nullable|string|max:255',
             'receipt.debit.body.watermark_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'receipt.debit.body.background_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -217,20 +218,45 @@ class OrgSettingController extends Controller
             'receipt.debit.labels.fund' => 'nullable|string|max:100',
             'receipt.debit.labels.purpose' => 'nullable|string|max:100',
         ]);
+
         $user = $request->user();
         $organization = $user->organization()->first();
-        // Initialize common_setting as array if it's null or a string
         $commonSettings = $organization->common_setting ?? [];
-        // Ensure it's an array (in case it was stored as JSON string)
         if (is_string($commonSettings)) {
-            $commonSettings = json_decode($commonSettings, true) ?? [];
+            $commonSettings = json_decode($commonSettings, true, 512, JSON_UNESCAPED_UNICODE) ?? [];
         }
-        // Safely merge the new receipt settings
+
         $commonSettings['receipt'] = $request->receipt;
-        // Save the updated settings
-        $organization->common_setting = $commonSettings;
+        $organization->common_setting = json_encode($commonSettings, JSON_UNESCAPED_UNICODE);
         $organization->save();
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($organization)
+            ->withProperties([
+                'changes' => ['receipt' => $request->receipt],
+                'old' => ['receipt' => $organization->getOriginal('common_setting')['receipt'] ?? []]
+            ])
+            ->log('updated receipt settings');
+
         return back()->with('success', 'Receipt settings updated successfully');
     }
 
+    private function getIconOptions()
+    {
+        return [
+            ['value' => 'hand-holding-heart', 'label' => 'Hand Holding Heart'],
+            ['value' => 'receipt', 'label' => 'Receipt'],
+            ['value' => 'donate', 'label' => 'Donate'],
+            ['value' => 'hands-helping', 'label' => 'Hands Helping'],
+            ['value' => 'gift', 'label' => 'Gift'],
+            ['value' => 'building', 'label' => 'Building'],
+            ['value' => 'university', 'label' => 'University'],
+            ['value' => 'church', 'label' => 'Church'],
+            ['value' => 'money-bill-wave', 'label' => 'Money Bill Wave'],
+            ['value' => 'credit-card', 'label' => 'Credit Card'],
+            ['value' => 'wallet', 'label' => 'Wallet'],
+            ['value' => 'handshake', 'label' => 'Handshake'],
+        ];
+    }
 }
