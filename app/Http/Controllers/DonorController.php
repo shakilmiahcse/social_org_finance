@@ -226,7 +226,7 @@ class DonorController extends Controller
             'total_transactions' => Transaction::where('donor_id', $donor->id)->count(),
         ];
 
-        // Get all donors for dropdown with total donated in brackets
+        // Get all donors for dropdown with phone in brackets if exists
         $donors = Donor::where('donors.organization_id', $organization_id)
             ->select(
                 'donors.id',
@@ -237,9 +237,16 @@ class DonorController extends Controller
             ->orderBy('donors.name', 'asc')
             ->get()
             ->map(function ($donor) {
+                $displayName = $donor->name;
+                if ($donor->phone) {
+                    $displayName .= " ({$donor->phone})";
+                }
+
                 return [
                     'id' => $donor->id,
-                    'name' => $donor->name . ($donor->phone ? ' (' . $donor->phone . ')' : '')
+                    'name' => $donor->name,
+                    'phone' => $donor->phone,
+                    'display_name' => $displayName, // Add display name with phone
                 ];
             });
 

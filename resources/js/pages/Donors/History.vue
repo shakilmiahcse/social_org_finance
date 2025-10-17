@@ -1,4 +1,4 @@
-<!-- Donors/History.vue (new file) -->
+<!-- Donors/History.vue -->
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
@@ -20,6 +20,8 @@ const props = defineProps({
         type: Array as () => Array<{
             id: number;
             name: string;
+            phone?: string;
+            display_name: string;
         }>,
         required: true
     },
@@ -42,6 +44,8 @@ const props = defineProps({
     summary: {
         type: Object as () => {
             total_donated: number;
+            total_raised: number;
+            total_transactions: number;
         },
         required: true
     },
@@ -67,6 +71,11 @@ const filteredTransactions = computed(() => {
         txn.payment_method.toLowerCase().includes(term) ||
         txn.reference.toLowerCase().includes(term)
     );
+});
+
+// Get current donor
+const currentDonor = computed(() => {
+    return props.donors.find(d => d.id === selectedDonorId.value);
 });
 
 // Methods
@@ -115,6 +124,8 @@ const exportToExcel = () => {
     worksheet.addRow([]); // Empty row
     worksheet.addRow(['Summary', '', '', '', '', '', '', '', '']);
     worksheet.addRow(['Total Donated', props.summary.total_donated]);
+    worksheet.addRow(['Total Raised', props.summary.total_raised]);
+    worksheet.addRow(['Total Transactions', props.summary.total_transactions]);
 
     // Style summary section
     const summaryRows = [
@@ -127,13 +138,13 @@ const exportToExcel = () => {
 
     // Generate Excel file
     workbook.xlsx.writeBuffer().then(buffer => {
-        saveAs(new Blob([buffer]), `donor_history_${props.donors.find(d => d.id === selectedDonorId.value)?.name || 'all'}.xlsx`);
+        saveAs(new Blob([buffer]), `donor_history_${currentDonor.value?.name || 'all'}.xlsx`);
     });
 };
 
 const exportToPDF = () => {
     const doc = new jsPDF();
-    const donorName = props.donors.find(d => d.id === selectedDonorId.value)?.name || 'All Donors';
+    const donorName = currentDonor.value?.name || 'All Donors';
 
     // Add title
     doc.setFontSize(16);
@@ -210,28 +221,56 @@ const formatCurrency = (amount: number) => {
         maximumFractionDigits: 2
     }).format(amount);
 };
+
+// Custom search function for v-select
+const donorSearch = (options, search) => {
+    if (!search) return options;
+
+    const term = search.toLowerCase();
+    return options.filter(option =>
+        option.name.toLowerCase().includes(term) ||
+        (option.phone && option.phone.toLowerCase().includes(term))
+    );
+};
 </script>
 
 <template>
-    <Head :title="`Donor History - ${donors.find(d => d.id === selectedDonorId)?.name || ''}`" />
+    <Head :title="`Donor History - ${currentDonor?.name || ''}`" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-4 space-y-4">
             <div class="bg-[#FAFAFA] shadow rounded-xl p-6 space-y-6">
                 <!-- Header with Donor Selector -->
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <h1 class="text-3xl font-bold">Donor/Raiser History</h1>
+                    <div>
+                        <h1 class="text-3xl font-bold">Donor/Raiser History</h1>
+                        <p v-if="currentDonor?.phone" class="text-gray-600 mt-1">
+                            Phone: {{ currentDonor.phone }}
+                        </p>
+                    </div>
 
                     <div class="w-full md:w-80">
                         <label class="block text-base font-medium text-gray-800 mb-2">Select Donor/Raiser</label>
                         <v-select
                             v-model="selectedDonorId"
                             :options="donors"
-                            label="name"
+                            label="display_name"
                             :reduce="donor => donor.id"
                             @update:modelValue="handleDonorChange"
-                            placeholder="Select a donor/raiser"
+                            :filter="donorSearch"
+                            placeholder="Search by name or phone..."
                             class="w-full border border-gray-300 rounded-md shadow-sm"
-                        ></v-select>
+                        >
+                            <template #option="{ display_name, phone }">
+                                <div class="flex flex-col">
+                                    <span>{{ display_name }}</span>
+                                </div>
+                            </template>
+                            <template #selected-option="{ display_name, phone }">
+                                <div class="flex flex-col">
+                                    <span>{{ display_name }}</span>
+                                </div>
+                            </template>
+                        </v-select>
                     </div>
                 </div>
 
@@ -240,6 +279,16 @@ const formatCurrency = (amount: number) => {
                     <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                         <h3 class="text-sm font-medium text-green-800">Total Donated</h3>
                         <p class="text-2xl font-semibold text-green-600">{{ formatCurrency(summary.total_donated) }}</p>
+                    </div>
+
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h3 class="text-sm font-medium text-red-800">Total Raised</h3>
+                        <p class="text-2xl font-semibold text-red-600">{{ formatCurrency(summary.total_raised) }}</p>
+                    </div>
+
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <h3 class="text-sm font-medium text-purple-800">Total Transactions</h3>
+                        <p class="text-2xl font-semibold text-purple-600">{{ summary.total_transactions }}</p>
                     </div>
                 </div>
 
