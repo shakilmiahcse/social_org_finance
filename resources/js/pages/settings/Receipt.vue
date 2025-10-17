@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm, Head } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
+// Props definition
 const props = defineProps<{
     receiptSettings: {
         credit: {
@@ -34,14 +35,17 @@ const props = defineProps<{
         name: string;
         currency: string;
         logo_path: string | null;
+        slogan?: string;
     };
 }>();
 
+// Initialize form with a deep copy of receiptSettings
 const form = useForm({
     _method: 'PUT',
-    receipt: props.receiptSettings
+    receipt: JSON.parse(JSON.stringify(props.receiptSettings)),
 });
 
+// Icon options for the select dropdown
 const iconOptions = [
     { value: 'hand-holding-heart', label: 'Hand Holding Heart' },
     { value: 'receipt', label: 'Receipt' },
@@ -57,16 +61,28 @@ const iconOptions = [
     { value: 'handshake', label: 'Handshake' },
 ];
 
+// Active tab state
+const activeTab = ref('credit');
+
+// Watch activeTab for debugging
+watch(activeTab, (newTab) => {
+    console.log('Active tab changed to:', newTab);
+});
+
+// Form submission
 const submit = () => {
     form.post(route('receipt.update'), {
         preserveScroll: true,
         onSuccess: () => {
-            form.reset();
+            console.log('Form submitted successfully');
+        },
+        onError: (errors) => {
+            console.error('Form submission errors:', errors);
         },
     });
 };
 
-const activeTab = ref('credit');
+// Preview data for credit and debit receipts
 const previewData = {
     credit: {
         type: 'credit',
@@ -77,7 +93,7 @@ const previewData = {
         created_at: new Date().toISOString(),
         donor: { name: 'John Doe' },
         fund: { name: 'General Fund' },
-        purpose: 'Donation for charity'
+        purpose: 'Donation for charity',
     },
     debit: {
         type: 'debit',
@@ -88,34 +104,41 @@ const previewData = {
         created_at: new Date().toISOString(),
         donor: { name: 'Organization' },
         fund: { name: 'Operations Fund' },
-        purpose: 'Office supplies purchase'
-    }
+        purpose: 'Office supplies purchase',
+    },
 };
 
+// Currency symbol computation
 const currencySymbol = computed(() => {
     const currencyMap: { [key: string]: string } = {
-        'USD': '$',
-        'EUR': '€',
-        'BDT': '৳',
-        'GBP': '£'
+        USD: '$',
+        EUR: '€',
+        BDT: '৳',
+        GBP: '£',
     };
     return currencyMap[props.organization.currency] || '৳';
 });
 
+// Format currency for display
 const formatCurrency = (amount: string) => {
-    return `${currencySymbol.value} ${parseFloat(amount).toLocaleString('en-US', {
+    const numberAmount = parseFloat(amount.replace(/,/g, ''));
+    if (isNaN(numberAmount)) {
+        return 'Invalid amount';
+    }
+    return `${currencySymbol.value} ${numberAmount.toLocaleString('bn-BD', {
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        maximumFractionDigits: 2,
     })}`;
 };
 
+// Format date for display
 const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
     };
     return new Date(dateString).toLocaleDateString('bn-BD', options);
 };
@@ -242,7 +265,7 @@ const formatDate = (dateString: string) => {
                                                     <font-awesome-icon v-else :icon="['fas', 'building']" class="text-gray-600 text-3xl" />
                                                 </div>
                                                 <h2 class="text-xl font-bold text-gray-800">{{ props.organization.name }}</h2>
-                                                <p class="text-gray-600">Helping communities grow</p>
+                                                <p class="text-gray-600">{{ props.organization.slogan || 'Helping communities grow' }}</p>
                                             </div>
                                             <div class="rounded-lg p-5 mb-6" :style="{ backgroundColor: form.receipt.credit.body.transaction_style }">
                                                 <div class="flex justify-between items-center mb-4 pb-4" :style="{ borderBottomColor: form.receipt.credit.body.transaction_style }">
@@ -449,7 +472,7 @@ const formatDate = (dateString: string) => {
                                                     <font-awesome-icon v-else :icon="['fas', 'building']" class="text-gray-600 text-3xl" />
                                                 </div>
                                                 <h2 class="text-xl font-bold text-gray-800">{{ props.organization.name }}</h2>
-                                                <p class="text-gray-600">Helping communities grow</p>
+                                                <p class="text-gray-600">{{ props.organization.slogan || 'Helping communities grow' }}</p>
                                             </div>
                                             <div class="rounded-lg p-5 mb-6" :style="{ backgroundColor: form.receipt.debit.body.transaction_style }">
                                                 <div class="flex justify-between items-center mb-4 pb-4" :style="{ borderBottomColor: form.receipt.debit.body.transaction_style }">

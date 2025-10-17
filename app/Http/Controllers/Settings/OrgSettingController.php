@@ -99,11 +99,13 @@ class OrgSettingController extends Controller
         }
         $user = request()->user();
         $organization = $user->organization()->first();
+
+        // Define English default settings
         $defaultSettings = [
             'credit' => [
                 'header' => [
-                    'title' => 'অনুদান রসিদ',
-                    'subtitle' => 'আপনার উদার সহায়তার জন্য ধন্যবাদ!',
+                    'title' => 'Donation Receipt',
+                    'subtitle' => 'Thank you for your generous support!',
                     'color' => '#16a34a',
                     'icon' => 'hand-holding-heart',
                 ],
@@ -114,22 +116,22 @@ class OrgSettingController extends Controller
                     'transaction_style' => '#dcfce7',
                 ],
                 'footer' => [
-                    'message' => 'আপনার সহযোগিতা আমাদের কাজ অব্যাহত রাখার অনুপ্রেরণা জোগায়।',
-                    'note' => 'এই রসিদটি সংরক্ষণের জন্য একটি অফিসিয়াল ডকুমেন্ট।',
+                    'message' => 'Your support helps us continue our mission.',
+                    'note' => 'This receipt is an official document for your records.',
                 ],
                 'labels' => [
-                    'amount' => 'অনুদানের পরিমাণ',
-                    'date' => 'তারিখ',
-                    'method' => 'অনুদান মাধ্যম',
-                    'donor' => 'দাতার নাম',
-                    'fund' => 'তহবিল',
-                    'purpose' => 'উদ্দেশ্য',
+                    'amount' => 'Donation Amount',
+                    'date' => 'Date',
+                    'method' => 'Donation Method',
+                    'donor' => 'Donor Name',
+                    'fund' => 'Fund',
+                    'purpose' => 'Purpose',
                 ],
             ],
             'debit' => [
                 'header' => [
-                    'title' => 'পেমেন্ট রসিদ',
-                    'subtitle' => 'আপনার পেমেন্টের জন্য ধন্যবাদ!',
+                    'title' => 'Payment Receipt',
+                    'subtitle' => 'Thank you for your payment!',
                     'color' => '#2563eb',
                     'icon' => 'receipt',
                 ],
@@ -140,16 +142,16 @@ class OrgSettingController extends Controller
                     'transaction_style' => '#dbeafe',
                 ],
                 'footer' => [
-                    'message' => 'এই অর্থায়ন কল্যাণমূলক কার্যক্রমের উন্নয়নে ব্যবহৃত হয়েছে।',
-                    'note' => 'এই রসিদটি সংরক্ষণের জন্য একটি অফিসিয়াল ডকুমেন্ট।',
+                    'message' => 'This payment supports our welfare activities.',
+                    'note' => 'This receipt is an official document for your records.',
                 ],
                 'labels' => [
-                    'amount' => 'পেমেন্টের পরিমাণ',
-                    'date' => 'তারিখ',
-                    'method' => 'পেমেন্ট মাধ্যম',
-                    'donor' => 'উত্তোলনকারীর নাম',
-                    'fund' => 'তহবিল',
-                    'purpose' => 'উদ্দেশ্য',
+                    'amount' => 'Payment Amount',
+                    'date' => 'Date',
+                    'method' => 'Payment Method',
+                    'donor' => 'Recipient Name',
+                    'fund' => 'Fund',
+                    'purpose' => 'Purpose',
                 ],
             ],
         ];
@@ -159,6 +161,7 @@ class OrgSettingController extends Controller
             $commonSettings = json_decode($commonSettings, true, 512, JSON_UNESCAPED_UNICODE) ?? [];
         }
 
+        // Merge database settings with defaults, prioritizing database values
         $receiptSettings = array_replace_recursive(
             $defaultSettings,
             $commonSettings['receipt'] ?? []
@@ -168,7 +171,7 @@ class OrgSettingController extends Controller
             'receiptSettings' => $receiptSettings,
             'organization' => [
                 'name' => $organization->name,
-                'currency' => $organization->currency,
+                'currency' => $organization->currency ?? 'BDT',
                 'logo_path' => $organization->logo_path ? Storage::url($organization->logo_path) : null,
             ],
             'can' => [
