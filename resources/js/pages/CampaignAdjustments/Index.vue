@@ -17,7 +17,7 @@ const toast = useToast();
 const searchTerm = ref('');
 const viewAdjustmentModal = ref();
 const selectedAdjustment = ref(null);
-const $refs = ref<Record<string, HTMLElement>>({});
+const openDropdownId = ref<number | null>(null);
 
 const props = defineProps({
     adjustments: {
@@ -71,6 +71,7 @@ const headers = [
 ];
 
 const viewAdjustment = (id: number) => {
+    openDropdownId.value = null;
     const adjustment = props.adjustments.find(a => a.id === id);
     if (adjustment) {
         selectedAdjustment.value = adjustment;
@@ -79,6 +80,7 @@ const viewAdjustment = (id: number) => {
 };
 
 const deleteAdjustment = (id: number) => {
+    openDropdownId.value = null;
     Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
@@ -98,26 +100,33 @@ const deleteAdjustment = (id: number) => {
     });
 };
 
-const handleClickOutside = (event: MouseEvent) => {
-    props.adjustments.forEach(adjustment => {
-        const dropdown = $refs.value[`dropdown-${adjustment.id}`];
-        if (dropdown && !dropdown.contains(event.target as Node) &&
-            !(event.target as Element).closest(`[data-dropdown-button="${adjustment.id}"]`)) {
-            dropdown.classList.add('hidden');
-        }
-    });
+const handleDocumentClick = (event: MouseEvent) => {
+  const target = event.target as Element;
+
+  // Check if click is on dropdown button
+  const dropdownButton = target.closest('[data-dropdown-button]');
+  if (dropdownButton) {
+    const id = Number(dropdownButton.getAttribute('data-dropdown-button'));
+    toggleDropdown(id);
+    return;
+  }
+
+  // Check if click is inside dropdown menu
+  const dropdownMenu = target.closest('[data-dropdown-menu]');
+  if (dropdownMenu) {
+    return; // Don't close if clicking inside menu
+  }
+
+  // Close dropdown if clicking outside
+  openDropdownId.value = null;
 };
 
 const toggleDropdown = (id: number) => {
-    const dropdown = $refs.value[`dropdown-${id}`];
-    if (dropdown) {
-        props.adjustments.forEach(a => {
-            if (a.id !== id && $refs.value[`dropdown-${a.id}`]) {
-                $refs.value[`dropdown-${a.id}`].classList.add('hidden');
-            }
-        });
-        dropdown.classList.toggle('hidden');
-    }
+  openDropdownId.value = openDropdownId.value === id ? null : id;
+};
+
+const isDropdownOpen = (id: number) => {
+  return openDropdownId.value === id;
 };
 
 const exportToExcel = () => {
@@ -154,12 +163,13 @@ const exportToPDF = () => {
 };
 
 onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('click', handleDocumentClick);
 });
 
 onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('click', handleDocumentClick);
 });
+
 const rowsPerPage = ref(20);
 const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
@@ -194,6 +204,7 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                             class="border-10 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring focus:border-blue-100">
                     </div>
                 </div>
+
                 <div v-if="props.permissions.view" class="overflow-auto">
                     <EasyDataTable :headers="headers" :items="filteredAdjustments" header-text-direction="left"
                         :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination
@@ -213,21 +224,21 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         <template #item-actions="{ id }">
                             <div class="relative inline-block text-left">
                                 <button :data-dropdown-button="id"
-                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded flex items-center gap-1"
                                     @click.stop="toggleDropdown(id)">
                                     Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                                 </button>
-                                <div :ref="el => $refs[`dropdown-${id}`] = el"
-                                    class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
+                                <div v-show="isDropdownOpen(id)" data-dropdown-menu
+                                    class="absolute right-0 z-50 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
                                     <div class="py-1">
-                                        <button v-if="props.permissions.view" @click.stop="viewAdjustment(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'eye']" />
+                                        <button v-if="props.permissions.view" @click="viewAdjustment(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'eye']" class="w-4 h-4" />
                                             View
                                         </button>
-                                        <button v-if="props.permissions.delete" @click.stop="deleteAdjustment(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'trash']" />
+                                        <button v-if="props.permissions.delete" @click="deleteAdjustment(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'trash']" class="w-4 h-4" />
                                             Delete
                                         </button>
                                     </div>
@@ -254,5 +265,15 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 
 .custom-table .font-bold {
     font-weight: bold !important;
+}
+
+/* Ensure dropdowns appear above table */
+:deep(.easy-data-table) {
+  position: relative;
+  z-index: 1;
+}
+
+:deep([data-dropdown-menu]) {
+  z-index: 1000 !important;
 }
 </style>

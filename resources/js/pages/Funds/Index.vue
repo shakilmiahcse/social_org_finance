@@ -22,7 +22,7 @@ const addFundModal = ref();
 const viewFundModal = ref();
 const editFundModal = ref();
 const selectedFund = ref(null);
-const $refs = ref<Record<string, HTMLElement>>({});
+const openDropdownId = ref<number | null>(null);
 
 // Props
 const props = defineProps({
@@ -76,6 +76,7 @@ const headers = [
 const addFund = () => addFundModal.value.open();
 
 const viewFund = (id: number) => {
+    openDropdownId.value = null;
     const fund = props.funds.find(f => f.id === id);
     if (fund) {
         selectedFund.value = fund;
@@ -84,10 +85,12 @@ const viewFund = (id: number) => {
 };
 
 const viewHistory = (id: number) => {
+    openDropdownId.value = null;
     router.get(`/funds/${id}/history`);
 };
 
 const editFund = (id: number) => {
+    openDropdownId.value = null;
     const fund = props.funds.find(f => f.id === id);
     if (fund) {
         selectedFund.value = fund;
@@ -96,6 +99,7 @@ const editFund = (id: number) => {
 };
 
 const deleteFund = (id: number) => {
+    openDropdownId.value = null;
     Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
@@ -115,27 +119,33 @@ const deleteFund = (id: number) => {
     });
 };
 
-const handleClickOutside = (event: MouseEvent) => {
-    props.funds.forEach(fund => {
-        const dropdown = $refs.value[`dropdown-${fund.id}`];
-        if (dropdown && !dropdown.contains(event.target as Node) &&
-            !(event.target as Element).closest(`[data-dropdown-button="${fund.id}"]`)) {
-            dropdown.classList.add('hidden');
-        }
-    });
+const handleDocumentClick = (event: MouseEvent) => {
+  const target = event.target as Element;
+
+  // Check if click is on dropdown button
+  const dropdownButton = target.closest('[data-dropdown-button]');
+  if (dropdownButton) {
+    const id = Number(dropdownButton.getAttribute('data-dropdown-button'));
+    toggleDropdown(id);
+    return;
+  }
+
+  // Check if click is inside dropdown menu
+  const dropdownMenu = target.closest('[data-dropdown-menu]');
+  if (dropdownMenu) {
+    return; // Don't close if clicking inside menu
+  }
+
+  // Close dropdown if clicking outside
+  openDropdownId.value = null;
 };
 
 const toggleDropdown = (id: number) => {
-    const dropdown = $refs.value[`dropdown-${id}`];
-    if (dropdown) {
-        // Close all other dropdowns first
-        props.funds.forEach(f => {
-            if (f.id !== id && $refs.value[`dropdown-${f.id}`]) {
-                $refs.value[`dropdown-${f.id}`].classList.add('hidden');
-            }
-        });
-        dropdown.classList.toggle('hidden');
-    }
+  openDropdownId.value = openDropdownId.value === id ? null : id;
+};
+
+const isDropdownOpen = (id: number) => {
+  return openDropdownId.value === id;
 };
 
 // Export functions
@@ -165,12 +175,13 @@ const exportToPDF = () => {
 
 // Lifecycle hooks
 onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('click', handleDocumentClick);
 });
 
 onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('click', handleDocumentClick);
 });
+
 const rowsPerPage = ref(20);
 const rowsItems = ref([20, 30, 50, 100, 200]);
 </script>
@@ -210,7 +221,9 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 
                 <!-- Fund table -->
                 <div v-if="props.permissions.view" class="overflow-auto">
-                    <EasyDataTable :headers="headers" :items="filteredFunds" header-text-direction="left" :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination class="custom-table min-w-[700px]">
+                    <EasyDataTable :headers="headers" :items="filteredFunds" header-text-direction="left"
+                        :rows-per-page="rowsPerPage" :rows-items="rowsItems" buttons-pagination
+                        class="custom-table min-w-[700px]">
 
                         <template #item-description="{ description }">
                             <span :title="description">
@@ -229,38 +242,39 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                 {{ type || 'N/A' }}
                             </span>
                         </template>
+
                         <template #item-actions="{ id }">
                             <div class="relative inline-block text-left">
                                 <button :data-dropdown-button="id"
-                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded flex items-center gap-1"
                                     @click.stop="toggleDropdown(id)">
                                     Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                                 </button>
-                                <div :ref="el => $refs[`dropdown-${id}`] = el"
-                                    class="hidden absolute right-0 z-10 mt-2 w-32 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
+                                <div v-show="isDropdownOpen(id)" data-dropdown-menu
+                                    class="absolute right-0 z-50 mt-2 w-32 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
                                     <div class="py-1">
                                         <!-- View Button -->
-                                        <button v-if="props.permissions.view" @click.stop="viewFund(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'eye']" />
+                                        <button v-if="props.permissions.view" @click="viewFund(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'eye']" class="w-4 h-4" />
                                             View
                                         </button>
                                         <!-- History Button -->
-                                        <button v-if="props.permissions.view" @click.stop="viewHistory(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'history']" />
+                                        <button v-if="props.permissions.view" @click="viewHistory(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'history']" class="w-4 h-4" />
                                             History
                                         </button>
                                         <!-- Edit Button -->
-                                        <button v-if="props.permissions.edit" @click.stop="editFund(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'pen-to-square']" />
+                                        <button v-if="props.permissions.edit" @click="editFund(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'pen-to-square']" class="w-4 h-4" />
                                             Edit
                                         </button>
                                         <!-- Delete Button -->
-                                        <button v-if="props.permissions.delete" @click.stop="deleteFund(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'trash']" />
+                                        <button v-if="props.permissions.delete" @click="deleteFund(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'trash']" class="w-4 h-4" />
                                             Delete
                                         </button>
                                     </div>
@@ -293,5 +307,15 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 /* Make the Name column bold */
 .custom-table .font-bold {
     font-weight: bold !important;
+}
+
+/* Ensure dropdowns appear above table */
+:deep(.easy-data-table) {
+  position: relative;
+  z-index: 1;
+}
+
+:deep([data-dropdown-menu]) {
+  z-index: 1000 !important;
 }
 </style>

@@ -24,8 +24,8 @@ const viewTransactionModal = ref();
 const editTransactionModal = ref();
 const receiptModal = ref();
 const selectedTransaction = ref(null);
-const $refs = ref<Record<string, HTMLElement>>({});
 const isFilterExpanded = ref(false);
+const openDropdownId = ref<number | null>(null);
 
 // Filters
 const selectedTypes = ref<string[]>([]);
@@ -123,7 +123,7 @@ const resetFilters = () => {
 
 // Update the mounted hook to initialize dropdown values
 onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('click', handleDocumentClick);
 
     if (props.filters.types) {
         selectedTypes.value = Array.isArray(props.filters.types) ? props.filters.types : [props.filters.types];
@@ -178,6 +178,7 @@ const headers = [
 ];
 
 const viewTransaction = (id: number) => {
+    openDropdownId.value = null;
     const transaction = props.transactions.find(t => t.id === id);
     if (transaction) {
         selectedTransaction.value = transaction;
@@ -186,6 +187,7 @@ const viewTransaction = (id: number) => {
 };
 
 const editTransaction = (id: number) => {
+    openDropdownId.value = null;
     const transaction = props.transactions.find(t => t.id === id);
     if (transaction) {
         selectedTransaction.value = transaction;
@@ -194,6 +196,7 @@ const editTransaction = (id: number) => {
 };
 
 const showReceipt = (id: number) => {
+    openDropdownId.value = null;
     const transaction = props.transactions.find(t => t.id === id);
     if (transaction) {
         selectedTransaction.value = transaction;
@@ -202,6 +205,7 @@ const showReceipt = (id: number) => {
 };
 
 const deleteTransaction = (id: number) => {
+    openDropdownId.value = null;
     Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
@@ -221,26 +225,33 @@ const deleteTransaction = (id: number) => {
     });
 };
 
-const handleClickOutside = (event: MouseEvent) => {
-    props.transactions.forEach(transaction => {
-        const dropdown = $refs.value[`dropdown-${transaction.id}`];
-        if (dropdown && !dropdown.contains(event.target as Node) &&
-            !(event.target as Element).closest(`[data-dropdown-button="${transaction.id}"]`)) {
-            dropdown.classList.add('hidden');
-        }
-    });
+const handleDocumentClick = (event: MouseEvent) => {
+  const target = event.target as Element;
+
+  // Check if click is on dropdown button
+  const dropdownButton = target.closest('[data-dropdown-button]');
+  if (dropdownButton) {
+    const id = Number(dropdownButton.getAttribute('data-dropdown-button'));
+    toggleDropdown(id);
+    return;
+  }
+
+  // Check if click is inside dropdown menu
+  const dropdownMenu = target.closest('[data-dropdown-menu]');
+  if (dropdownMenu) {
+    return; // Don't close if clicking inside menu
+  }
+
+  // Close dropdown if clicking outside
+  openDropdownId.value = null;
 };
 
 const toggleDropdown = (id: number) => {
-    const dropdown = $refs.value[`dropdown-${id}`];
-    if (dropdown) {
-        props.transactions.forEach(t => {
-            if (t.id !== id && $refs.value[`dropdown-${t.id}`]) {
-                $refs.value[`dropdown-${t.id}`].classList.add('hidden');
-            }
-        });
-        dropdown.classList.toggle('hidden');
-    }
+  openDropdownId.value = openDropdownId.value === id ? null : id;
+};
+
+const isDropdownOpen = (id: number) => {
+  return openDropdownId.value === id;
 };
 
 const exportToExcel = () => {
@@ -278,7 +289,7 @@ const exportToPDF = () => {
 };
 
 onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('click', handleDocumentClick);
 });
 
 const rowsPerPage = ref(20);
@@ -451,31 +462,31 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                         <template #item-actions="{ id }">
                             <div class="relative inline-block text-left">
                                 <button :data-dropdown-button="id"
-                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded flex items-center gap-1"
                                     @click.stop="toggleDropdown(id)">
                                     Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                                 </button>
-                                <div :ref="el => $refs[`dropdown-${id}`] = el"
-                                    class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
+                                <div v-show="isDropdownOpen(id)" data-dropdown-menu
+                                    class="absolute right-0 z-50 mt-2 w-32 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
                                     <div class="py-1">
-                                        <button @click.stop="viewTransaction(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'eye']" />
+                                        <button @click="viewTransaction(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'eye']" class="w-4 h-4" />
                                             View
                                         </button>
-                                        <button @click.stop="editTransaction(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'pen-to-square']" />
+                                        <button @click="editTransaction(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'pen-to-square']" class="w-4 h-4" />
                                             Edit
                                         </button>
-                                        <button @click.stop="showReceipt(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'receipt']" />
+                                        <button @click="showReceipt(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'receipt']" class="w-4 h-4" />
                                             Receipt
                                         </button>
-                                        <button @click.stop="deleteTransaction(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'trash']" />
+                                        <button @click="deleteTransaction(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'trash']" class="w-4 h-4" />
                                             Delete
                                         </button>
                                     </div>
@@ -528,5 +539,15 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 
 .dp__menu {
     z-index: 50;
+}
+
+/* Ensure dropdowns appear above table */
+:deep(.easy-data-table) {
+  position: relative;
+  z-index: 1;
+}
+
+:deep([data-dropdown-menu]) {
+  z-index: 1000 !important;
 }
 </style>

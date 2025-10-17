@@ -22,9 +22,9 @@ const addDonorModal = ref();
 const viewDonorModal = ref();
 const editDonorModal = ref();
 const selectedDonor = ref(null);
-const $refs = ref<Record<string, HTMLElement>>({});
 const isFilterExpanded = ref(false);
 const selectedBloodGroups = ref<string[]>([]);
+const openDropdownId = ref<number | null>(null);
 
 // Props
 const props = defineProps({
@@ -98,65 +98,76 @@ const headers = [
 const addDonor = () => addDonorModal.value.open();
 
 const viewDonor = (id: number) => {
-    const donor = props.donors.find(d => d.id === id);
-    if (donor) {
-        selectedDonor.value = donor;
-        viewDonorModal.value.open();
-    }
+  openDropdownId.value = null;
+  const donor = props.donors.find(d => d.id === id);
+  if (donor) {
+      selectedDonor.value = donor;
+      viewDonorModal.value.open();
+  }
 };
 
 const editDonor = (id: number) => {
-    const donor = props.donors.find(d => d.id === id);
-    if (donor) {
-        selectedDonor.value = donor;
-        editDonorModal.value.open();
-    }
+  openDropdownId.value = null;
+  const donor = props.donors.find(d => d.id === id);
+  if (donor) {
+      selectedDonor.value = donor;
+      editDonorModal.value.open();
+  }
 };
 
 const viewHistory = (id: number) => {
-    router.visit(`/donors/${id}/history`);
+  openDropdownId.value = null;
+  router.visit(`/donors/${id}/history`);
 };
 
 const deleteDonor = (id: number) => {
-    Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.delete(`/donors/${id}`, {
-                onSuccess: () => {
-                    toast.success('The donor/raiser has been deleted.')
-                }
-            });
-        }
-    });
+  openDropdownId.value = null;
+  Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+  }).then((result) => {
+      if (result.isConfirmed) {
+          router.delete(`/donors/${id}`, {
+              onSuccess: () => {
+                  toast.success('The donor/raiser has been deleted.')
+              }
+          });
+      }
+  });
 };
 
-const handleClickOutside = (event: MouseEvent) => {
-    props.donors.forEach(donor => {
-        const dropdown = $refs.value[`dropdown-${donor.id}`];
-        if (dropdown && !dropdown.contains(event.target as Node) &&
-            !(event.target as Element).closest(`[data-dropdown-button="${donor.id}"]`)) {
-            dropdown.classList.add('hidden');
-        }
-    });
+const handleDocumentClick = (event: MouseEvent) => {
+  const target = event.target as Element;
+
+  // Check if click is on dropdown button
+  const dropdownButton = target.closest('[data-dropdown-button]');
+  if (dropdownButton) {
+    const id = Number(dropdownButton.getAttribute('data-dropdown-button'));
+    toggleDropdown(id);
+    return;
+  }
+
+  // Check if click is inside dropdown menu
+  const dropdownMenu = target.closest('[data-dropdown-menu]');
+  if (dropdownMenu) {
+    return; // Don't close if clicking inside menu
+  }
+
+  // Close dropdown if clicking outside
+  openDropdownId.value = null;
 };
 
 const toggleDropdown = (id: number) => {
-    const dropdown = $refs.value[`dropdown-${id}`];
-    if (dropdown) {
-        props.donors.forEach(d => {
-            if (d.id !== id && $refs.value[`dropdown-${d.id}`]) {
-                $refs.value[`dropdown-${d.id}`].classList.add('hidden');
-            }
-        });
-        dropdown.classList.toggle('hidden');
-    }
+  openDropdownId.value = openDropdownId.value === id ? null : id;
+};
+
+const isDropdownOpen = (id: number) => {
+  return openDropdownId.value === id;
 };
 
 const exportToExcel = () => {
@@ -185,11 +196,11 @@ const exportToPDF = () => {
 
 // Lifecycle hooks
 onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('click', handleDocumentClick);
 });
 
 onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
+    document.removeEventListener('click', handleDocumentClick);
 });
 
 const rowsPerPage = ref(20);
@@ -266,36 +277,36 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
                                 {{ blood_group }}
                             </span>
                         </template>
-                        <template #item-actions="{ id, blood_group }">
+                        <template #item-actions="{ id }">
                             <div class="relative inline-block text-left">
                                 <button :data-dropdown-button="id"
-                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded"
+                                    class="bg-blue-500 hover:bg-blue-700 px-2 py-1 text-white rounded flex items-center gap-1"
                                     @click.stop="toggleDropdown(id)">
                                     Action <font-awesome-icon :icon="['fas', 'angle-down']" />
                                 </button>
-                                <div :ref="el => $refs[`dropdown-${id}`] = el"
-                                    class="hidden absolute right-0 z-10 mt-2 w-28 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
+                                <div v-show="isDropdownOpen(id)" data-dropdown-menu
+                                    class="absolute right-0 z-50 mt-2 w-32 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 origin-top-right">
                                     <div class="py-1">
                                         <!-- View Button -->
-                                        <button v-if="props.permissions.view" @click.stop="viewDonor(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'eye']" />
+                                        <button v-if="props.permissions.view" @click="viewDonor(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'eye']" class="w-4 h-4" />
                                             View
                                         </button>
                                         <!-- History Button -->
-                                        <button v-if="props.permissions.view" @click.stop="viewHistory(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'history']" />
+                                        <button v-if="props.permissions.view" @click="viewHistory(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'history']" class="w-4 h-4" />
                                             History
                                         </button>
-                                        <button v-if="props.permissions.edit" @click.stop="editDonor(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'pen-to-square']" />
+                                        <button v-if="props.permissions.edit" @click="editDonor(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'pen-to-square']" class="w-4 h-4" />
                                             Edit
                                         </button>
-                                        <button v-if="props.permissions.delete" @click.stop="deleteDonor(id)"
-                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                                            <font-awesome-icon :icon="['fas', 'trash']" />
+                                        <button v-if="props.permissions.delete" @click="deleteDonor(id)"
+                                            class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition-colors">
+                                            <font-awesome-icon :icon="['fas', 'trash']" class="w-4 h-4" />
                                             Delete
                                         </button>
                                     </div>
@@ -333,5 +344,15 @@ const rowsItems = ref([20, 30, 50, 100, 200]);
 /* Checkbox styling */
 input[type="checkbox"] {
     accent-color: #ef4444; /* red-500 */
+}
+
+/* Ensure dropdowns appear above table */
+:deep(.easy-data-table) {
+  position: relative;
+  z-index: 1;
+}
+
+:deep([data-dropdown-menu]) {
+  z-index: 1000 !important;
 }
 </style>
