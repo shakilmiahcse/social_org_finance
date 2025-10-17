@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             'funds.view',
             'funds.edit',
             'funds.delete',
+            'funds.close',
             'donors.create',
             'donors.view',
             'donors.edit',

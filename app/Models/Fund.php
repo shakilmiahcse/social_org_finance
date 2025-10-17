@@ -18,7 +18,7 @@ class Fund extends Model
             ->logOnlyDirty();
     }
     protected $fillable = [
-        'name', 'description', 'type', 'total_amount', 'created_by', 'updated_by', 'organization_id'
+        'name', 'description', 'type', 'created_by', 'updated_by', 'organization_id', 'closed_note', 'closed_at', 'closed_by'
     ];
 
     public function createdBy()
@@ -54,6 +54,7 @@ class Fund extends Model
         $organization_id = request()->session()->get("organization_id");
 
         return self::where('organization_id', $organization_id)
+        ->where('type', 'main')
         ->pluck('name', 'id')
         ->map(function ($name, $id) {
             return ['id' => $id, 'name' => $name];
