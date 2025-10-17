@@ -459,7 +459,6 @@ const formatNumber = (num: number) => {
                                     </div>
                                     <div>
                                         <p class="font-medium text-gray-900">{{ txn.txn_id }}</p>
-                                        <p class="text-sm text-gray-500">{{ txn.description || 'No description' }}</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
