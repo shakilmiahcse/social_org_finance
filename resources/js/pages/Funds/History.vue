@@ -72,7 +72,10 @@ const filteredTransactions = computed(() => {
 });
 
 // Methods
-const handleFundChange = (fundId: number) => {
+const handleFundChange = (fundId: number | null) => {
+    if (!fundId) {
+        return;
+    }
     router.visit(`/funds/${fundId}/history`, {
         preserveState: true,
         preserveScroll: true

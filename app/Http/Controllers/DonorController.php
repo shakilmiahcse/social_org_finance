@@ -186,21 +186,23 @@ class DonorController extends Controller
             abort(403, 'You do not have permission to view donor history.');
         }
 
-        // Verify the donor belongs to the organization
         $organization_id = request()->session()->get("organization_id");
         if ($donor->organization_id !== $organization_id) {
             abort(403, 'You do not have permission to view this donor.');
         }
 
-        // Get transactions (assuming donations are 'credit' type)
-        $transactions = Transaction::where('donor_id', $donor->id)
+        // ✅ একবার Transaction query তৈরি
+        $baseQuery = Transaction::where('donor_id', $donor->id);
+
+        // ✅ লেনদেন তালিকা (transactions)
+        $transactions = (clone $baseQuery)
             ->with(['createdBy', 'fund'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($txn) {
                 return [
                     'id' => $txn->id,
-                    'txn_no' => $txn->txn_id ?? $txn->id, // Fallback if txn_id is not present
+                    'txn_no' => $txn->txn_id ?? $txn->id,
                     'type' => $txn->type,
                     'amount' => $txn->amount,
                     'fund' => $txn->fund ? ['name' => $txn->fund->name] : null,
@@ -213,28 +215,25 @@ class DonorController extends Controller
                 ];
             });
 
-        // Calculate summary
+        // ✅ Summary হিসাব clone ব্যবহার করে
         $summary = [
-            'total_donated' => Transaction::where('donor_id', $donor->id)
+            'total_donated' => (clone $baseQuery)
                 ->where('type', 'credit')
                 ->where('status', 'completed')
                 ->sum('amount'),
-            'total_raised' => Transaction::where('donor_id', $donor->id)
+
+            'total_raised' => (clone $baseQuery)
                 ->where('type', 'debit')
                 ->where('status', 'completed')
                 ->sum('amount'),
-            'total_transactions' => Transaction::where('donor_id', $donor->id)->count(),
+
+            'total_transactions' => (clone $baseQuery)->count(),
         ];
 
-        // Get all donors for dropdown with phone in brackets if exists
-        $donors = Donor::where('donors.organization_id', $organization_id)
-            ->select(
-                'donors.id',
-                'donors.name',
-                'donors.phone',
-            )
-            ->groupBy('donors.id', 'donors.name', 'donors.phone')
-            ->orderBy('donors.name', 'asc')
+        // ✅ Donor তালিকা (dropdown)
+        $donors = Donor::where('organization_id', $organization_id)
+            ->select('id', 'name', 'phone', 'address')
+            ->orderBy('name', 'asc')
             ->get()
             ->map(function ($donor) {
                 $displayName = $donor->name;
@@ -246,7 +245,8 @@ class DonorController extends Controller
                     'id' => $donor->id,
                     'name' => $donor->name,
                     'phone' => $donor->phone,
-                    'display_name' => $displayName, // Add display name with phone
+                    'address' => $donor->address,
+                    'display_name' => $displayName,
                 ];
             });
 

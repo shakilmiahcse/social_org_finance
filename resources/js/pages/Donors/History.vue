@@ -21,6 +21,7 @@ const props = defineProps({
             id: number;
             name: string;
             phone?: string;
+            address?: string;
             display_name: string;
         }>,
         required: true
@@ -79,7 +80,11 @@ const currentDonor = computed(() => {
 });
 
 // Methods
-const handleDonorChange = (donorId: number) => {
+const handleDonorChange = (donorId: number | null) => {
+    if (!donorId) {
+        return;
+    }
+
     router.visit(`/donors/${donorId}/history`, {
         preserveState: true,
         preserveScroll: true
@@ -243,8 +248,8 @@ const donorSearch = (options, search) => {
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div>
                         <h1 class="text-3xl font-bold">Donor/Raiser History</h1>
-                        <p v-if="currentDonor?.phone" class="text-gray-600 mt-1">
-                            Phone: {{ currentDonor.phone }}
+                        <p v-if="currentDonor?.address" class="text-gray-600 mt-1">
+                            Address: {{ currentDonor.address }}
                         </p>
                     </div>
 
@@ -261,11 +266,6 @@ const donorSearch = (options, search) => {
                             class="w-full border border-gray-300 rounded-md shadow-sm"
                         >
                             <template #option="{ display_name, phone }">
-                                <div class="flex flex-col">
-                                    <span>{{ display_name }}</span>
-                                </div>
-                            </template>
-                            <template #selected-option="{ display_name, phone }">
                                 <div class="flex flex-col">
                                     <span>{{ display_name }}</span>
                                 </div>
