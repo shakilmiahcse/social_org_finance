@@ -2,7 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { type BreadcrumbItem } from '@/types';
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import {
     Chart as ChartJS,
     ArcElement,
@@ -58,9 +58,21 @@ const props = defineProps<{
     },
 }>();
 
+// Add default values to prevent undefined errors
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' }
 ];
+
+// Ensure financialSummary has safe defaults
+const safeFinancialSummary = computed(() => {
+    return {
+        balance: props.financialSummary?.balance || 0,
+        total_credit: props.financialSummary?.total_credit || 0,
+        total_debit: props.financialSummary?.total_debit || 0,
+        monthly_credit: props.financialSummary?.monthly_credit || 0,
+        monthly_debit: props.financialSummary?.monthly_debit || 0
+    };
+});
 
 // Date range for filtering
 const dateRange = ref([new Date(new Date().setDate(new Date().getDate() - 30)), new Date()]);
@@ -68,7 +80,7 @@ const dateRange = ref([new Date(new Date().setDate(new Date().getDate() - 30)), 
 // Active chart type for trends
 const activeChartType = ref('line');
 
-// Chart data refs
+// Chart data refs with safer initialization
 const fundChartData = ref({
     labels: [] as string[],
     datasets: [{
@@ -106,7 +118,7 @@ const trendChartData = ref({
     ]
 });
 
-// Chart options
+// Chart options (same as before)
 const pieChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -186,23 +198,26 @@ const barChartOptions = {
 
 // Computed properties for additional metrics
 const monthlyNet = computed(() => {
-    return props.financialSummary.monthly_credit - props.financialSummary.monthly_debit;
+    return safeFinancialSummary.value.monthly_credit - safeFinancialSummary.value.monthly_debit;
 });
 
 const growthRate = computed(() => {
-    const previousMonth = props.financialSummary.monthly_credit * 0.8; // Mock data
-    const currentMonth = props.financialSummary.monthly_credit;
+    const previousMonth = safeFinancialSummary.value.monthly_credit * 0.8;
+    const currentMonth = safeFinancialSummary.value.monthly_credit;
     return previousMonth > 0 ? ((currentMonth - previousMonth) / previousMonth) * 100 : 0;
 });
 
-// Define processChartData first
-const processChartData = (fundAllocation: any[], transactionTrends: any[]) => {
+// Safe data processing
+const processChartData = (fundAllocation: any[] = [], transactionTrends: any[] = []) => {
     // Process Fund Allocation data
     if (fundAllocation && fundAllocation.length) {
-        fundChartData.value.labels = fundAllocation.map(fund => fund.name);
+        fundChartData.value.labels = fundAllocation.map(fund => fund.name || 'Unknown');
         fundChartData.value.datasets[0].data = fundAllocation.map(fund =>
             parseFloat(fund.transactions_sum_amount) || 0
         );
+    } else {
+        fundChartData.value.labels = ['No Data'];
+        fundChartData.value.datasets[0].data = [1];
     }
 
     // Process Transaction Trends data
@@ -210,7 +225,7 @@ const processChartData = (fundAllocation: any[], transactionTrends: any[]) => {
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         trendChartData.value.labels = transactionTrends.map(t =>
-            `${monthNames[t.month - 1]} ${t.year}`
+            `${monthNames[(t.month || 1) - 1]} ${t.year || new Date().getFullYear()}`
         );
         trendChartData.value.datasets[0].data = transactionTrends.map(t =>
             parseFloat(t.credit) || 0
@@ -218,17 +233,26 @@ const processChartData = (fundAllocation: any[], transactionTrends: any[]) => {
         trendChartData.value.datasets[1].data = transactionTrends.map(t =>
             parseFloat(t.debit) || 0
         );
+    } else {
+        // Create empty data structure
+        trendChartData.value.labels = ['No Data'];
+        trendChartData.value.datasets[0].data = [0];
+        trendChartData.value.datasets[1].data = [0];
     }
 };
 
-// Then set up the watcher
+// Initialize on mount and watch for changes
+onMounted(() => {
+    processChartData(props.fundAllocation, props.transactionTrends);
+});
+
 watch(() => [props.fundAllocation, props.transactionTrends], () => {
     processChartData(props.fundAllocation, props.transactionTrends);
 }, { immediate: true });
 
 // Format number helper
 const formatNumber = (num: number) => {
-    return num.toLocaleString();
+    return num?.toLocaleString() || '0';
 };
 </script>
 
@@ -246,8 +270,8 @@ const formatNumber = (num: number) => {
                     <div class="flex items-center gap-3">
                         <div class="text-right">
                             <p class="text-sm text-gray-500">Current Balance</p>
-                            <p class="text-2xl font-bold" :class="financialSummary.balance < 0 ? 'text-red-600' : 'text-green-600'">
-                                ৳{{ formatNumber(financialSummary.balance) }}
+                            <p class="text-2xl font-bold mt-2" :class="safeFinancialSummary.balance < 0 ? 'text-red-600' : 'text-green-600'">
+                                ৳{{ formatNumber(safeFinancialSummary.balance) }}
                             </p>
                         </div>
                         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">

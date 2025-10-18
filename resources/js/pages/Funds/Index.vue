@@ -102,17 +102,17 @@ const deleteFund = (id: number) => {
     openDropdownId.value = null;
     Swal.fire({
         title: 'Are you sure?',
-        text: "You won't be able to revert this!",
+        text: 'If you delete this fund, all related transactions will also be deleted permanently!',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!',
+        confirmButtonText: 'Yes, delete everything!',
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(`/funds/${id}`, {
                 onSuccess: () => {
-                    toast.success('The fund has been deleted.')
+                    toast.success('The fund and all related transactions have been deleted.')
                 }
             });
         }
