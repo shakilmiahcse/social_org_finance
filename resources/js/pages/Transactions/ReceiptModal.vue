@@ -1,5 +1,5 @@
 <template>
-    <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
+    <div v-if="isOpen && transaction" class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex items-center justify-center min-h-screen px-4">
             <!-- Background overlay -->
             <div class="absolute inset-0 bg-gray-500 opacity-75" aria-hidden="true" @click="closeModal"></div>
@@ -7,26 +7,26 @@
             <!-- Modal container -->
             <div
                 class="relative transform overflow-hidden rounded-xl text-left shadow-xl transition-all w-full max-w-lg mx-auto my-8"
-                :style="{ backgroundColor: receiptSettings[transaction.type].body.background_color }">
+                :style="{ backgroundColor: safeReceiptSettings[safeTransactionType].body.background_color }">
                 <!-- Receipt Content -->
-                <div id="receipt" ref="receiptElement" :style="{ backgroundColor: receiptSettings[transaction.type].body.background_color }">
+                <div id="receipt" ref="receiptElement" :style="{ backgroundColor: safeReceiptSettings[safeTransactionType].body.background_color }">
                     <!-- Watermark -->
                     <div
                         class="absolute -left-20 -top-20 text-9xl font-bold transform -rotate-30 select-none pointer-events-none"
-                        :style="{ color: receiptSettings[transaction.type].body.watermark_color, opacity: '0.1' }">
-                        {{ receiptSettings[transaction.type].body.watermark_text }}
+                        :style="{ color: safeReceiptSettings[safeTransactionType].body.watermark_color, opacity: '0.1' }">
+                        {{ safeReceiptSettings[safeTransactionType].body.watermark_text }}
                     </div>
 
                     <!-- Header -->
-                    <div class="p-6 text-white relative" :style="{ backgroundColor: receiptSettings[transaction.type].header.color }">
+                    <div class="p-6 text-white relative" :style="{ backgroundColor: safeReceiptSettings[safeTransactionType].header.color }">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <div class="w-14 h-14 bg-[#FAFAFA]/20 rounded-full flex items-center justify-center">
-                                    <font-awesome-icon :icon="['fas', receiptSettings[transaction.type].header.icon]" class="text-2xl" />
+                                    <font-awesome-icon :icon="['fas', safeReceiptSettings[safeTransactionType].header.icon]" class="text-2xl" />
                                 </div>
                                 <div class="ml-4">
-                                    <h1 class="text-2xl font-bold">{{ receiptSettings[transaction.type].header.title }}</h1>
-                                    <p class="text-white/80">{{ receiptSettings[transaction.type].header.subtitle }}</p>
+                                    <h1 class="text-2xl font-bold">{{ safeReceiptSettings[safeTransactionType].header.title }}</h1>
+                                    <p class="text-white/80">{{ safeReceiptSettings[safeTransactionType].header.subtitle }}</p>
                                 </div>
                             </div>
                             <div class="text-right">
@@ -43,8 +43,8 @@
                             <div
                                 class="w-20 h-20 mx-auto mb-4 rounded-full border-4 border-gray-100/50 overflow-hidden bg-white flex items-center justify-center">
                                 <img
-                                    v-if="organization.logo_path"
-                                    :src="organization.logo_path"
+                                    v-if="safeOrganization.logo_path"
+                                    :src="safeOrganization.logo_path"
                                     alt="Logo"
                                     class="object-contain w-full h-full"
                                 />
@@ -54,17 +54,17 @@
                                     class="text-gray-600 text-3xl"
                                 />
                             </div>
-                            <h2 class="text-xl font-bold text-gray-800">{{ organization.name }}</h2>
-                            <p class="text-gray-600">{{ organization.slogan }}</p>
+                            <h2 class="text-xl font-bold text-gray-800">{{ safeOrganization.name }}</h2>
+                            <p class="text-gray-600">{{ safeOrganization.slogan }}</p>
                         </div>
 
                         <!-- Transaction Details -->
-                        <div class="rounded-lg p-5 mb-6" :style="{ backgroundColor: receiptSettings[transaction.type].body.transaction_style }">
+                        <div class="rounded-lg p-5 mb-6" :style="{ backgroundColor: safeReceiptSettings[safeTransactionType].body.transaction_style }">
                             <div
-                                class="flex justify-between items-center mb-4 pb-4"
-                                :style="{ borderBottomColor: receiptSettings[transaction.type].body.transaction_style }">
+                                class="flex justify-between items-center mb-4 pb-4 border-b"
+                                :style="{ borderBottomColor: safeReceiptSettings[safeTransactionType].body.transaction_style }">
                                 <div>
-                                    <p class="text-gray-600 text-sm">{{ receiptSettings[transaction.type].labels.amount }}</p>
+                                    <p class="text-gray-600 text-sm">{{ safeReceiptSettings[safeTransactionType].labels.amount }}</p>
                                     <p class="text-3xl font-bold text-gray-800">
                                         {{ formatCurrency(transaction.amount) }}
                                     </p>
@@ -78,34 +78,34 @@
 
                             <div class="space-y-3">
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600">{{ receiptSettings[transaction.type].labels.date }}</span>
+                                    <span class="text-gray-600">{{ safeReceiptSettings[safeTransactionType].labels.date }}</span>
                                     <span class="font-semibold text-gray-800">{{ formatDate(transaction.created_at) }}</span>
                                 </div>
 
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600">{{ receiptSettings[transaction.type].labels.method }}</span>
+                                    <span class="text-gray-600">{{ safeReceiptSettings[safeTransactionType].labels.method }}</span>
                                     <span class="font-semibold text-gray-800 capitalize">{{ transaction.payment_method }}</span>
                                 </div>
 
-                                <div v-if="transaction.donor && transaction.type === 'credit'" class="flex justify-between">
-                                    <span class="text-gray-600">{{ receiptSettings[transaction.type].labels.donor }}</span>
+                                <div v-if="transaction.donor && safeTransactionType === 'credit'" class="flex justify-between">
+                                    <span class="text-gray-600">{{ safeReceiptSettings[safeTransactionType].labels.donor }}</span>
                                     <span class="font-semibold text-gray-800">{{ transaction.donor.name }}</span>
                                 </div>
 
-                                <div v-if="transaction.type === 'debit'" class="flex justify-between">
-                                    <span class="text-gray-600">{{ receiptSettings[transaction.type].labels.donor }}</span>
+                                <div v-if="safeTransactionType === 'debit'" class="flex justify-between">
+                                    <span class="text-gray-600">{{ safeReceiptSettings[safeTransactionType].labels.donor }}</span>
                                     <span class="font-semibold text-gray-800">
                                         {{ transaction.donor?.name || 'Organization' }}
                                     </span>
                                 </div>
 
                                 <div v-if="transaction.fund" class="flex justify-between">
-                                    <span class="text-gray-600">{{ receiptSettings[transaction.type].labels.fund }}</span>
+                                    <span class="text-gray-600">{{ safeReceiptSettings[safeTransactionType].labels.fund }}</span>
                                     <span class="font-semibold text-gray-800">{{ transaction.fund.name }}</span>
                                 </div>
 
                                 <div v-if="transaction.purpose" class="flex justify-between">
-                                    <span class="text-gray-600">{{ receiptSettings[transaction.type].labels.purpose }}</span>
+                                    <span class="text-gray-600">{{ safeReceiptSettings[safeTransactionType].labels.purpose }}</span>
                                     <span class="font-semibold text-gray-800">{{ transaction.purpose }}</span>
                                 </div>
                             </div>
@@ -113,8 +113,8 @@
 
                         <!-- Footer -->
                         <div class="text-center">
-                            <p class="text-gray-600 text-sm mb-1">{{ receiptSettings[transaction.type].footer.message }}</p>
-                            <p class="text-gray-500 text-xs">{{ receiptSettings[transaction.type].footer.note }}</p>
+                            <p class="text-gray-600 text-sm mb-1">{{ safeReceiptSettings[safeTransactionType].footer.message }}</p>
+                            <p class="text-gray-500 text-xs">{{ safeReceiptSettings[safeTransactionType].footer.note }}</p>
                         </div>
                     </div>
                 </div>
@@ -147,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useToast } from 'vue-toastification';
 import html2canvas from 'html2canvas';
 import type { Transaction } from '@/types';
@@ -161,66 +161,160 @@ interface Organization {
     currency: string;
 }
 
-const props = defineProps<{
-    transaction: Transaction;
-    organization: Organization;
-    receiptSettings: {
-        credit: {
-            header: { title: string; subtitle: string; color: string; icon: string };
-            body: { watermark_text: string; watermark_color: string; background_color: string; transaction_style: string };
-            footer: { message: string; note: string };
-            labels: { amount: string; date: string; method: string; donor: string; fund: string; purpose: string };
-        };
-        debit: {
-            header: { title: string; subtitle: string; color: string; icon: string };
-            body: { watermark_text: string; watermark_color: string; background_color: string; transaction_style: string };
-            footer: { message: string; note: string };
-            labels: { amount: string; date: string; method: string; donor: string; fund: string; purpose: string };
-        };
+interface ReceiptSettings {
+    credit: {
+        header: { title: string; subtitle: string; color: string; icon: string };
+        body: { watermark_text: string; watermark_color: string; background_color: string; transaction_style: string };
+        footer: { message: string; note: string };
+        labels: { amount: string; date: string; method: string; donor: string; fund: string; purpose: string };
     };
+    debit: {
+        header: { title: string; subtitle: string; color: string; icon: string };
+        body: { watermark_text: string; watermark_color: string; background_color: string; transaction_style: string };
+        footer: { message: string; note: string };
+        labels: { amount: string; date: string; method: string; donor: string; fund: string; purpose: string };
+    };
+}
+
+const props = defineProps<{
+    transaction: Transaction | null;
+    organization: Organization | null;
+    receiptSettings?: ReceiptSettings;
 }>();
 
 const emit = defineEmits(['close']);
 const isOpen = ref(false);
 const receiptElement = ref<HTMLElement | null>(null);
 
+// Default receipt settings
+const defaultReceiptSettings: ReceiptSettings = {
+    credit: {
+        header: {
+            title: 'Donation Receipt',
+            subtitle: 'Thank you for your generous support!',
+            color: '#16a34a',
+            icon: 'hand-holding-heart',
+        },
+        body: {
+            watermark_text: 'RECEIPT',
+            watermark_color: '#22c55e',
+            background_color: '#f0fdf4',
+            transaction_style: '#dcfce7',
+        },
+        footer: {
+            message: 'Your support helps us continue our mission.',
+            note: 'This receipt is an official document for your records.',
+        },
+        labels: {
+            amount: 'Donation Amount',
+            date: 'Date',
+            method: 'Donation Method',
+            donor: 'Donor Name',
+            fund: 'Fund',
+            purpose: 'Purpose',
+        },
+    },
+    debit: {
+        header: {
+            title: 'Payment Receipt',
+            subtitle: 'Thank you for your payment!',
+            color: '#2563eb',
+            icon: 'receipt',
+        },
+        body: {
+            watermark_text: 'PAYMENT',
+            watermark_color: '#3b82f6',
+            background_color: '#eff6ff',
+            transaction_style: '#dbeafe',
+        },
+        footer: {
+            message: 'This payment supports our welfare activities.',
+            note: 'This receipt is an official document for your records.',
+        },
+        labels: {
+            amount: 'Payment Amount',
+            date: 'Date',
+            method: 'Payment Method',
+            donor: 'Recipient Name',
+            fund: 'Fund',
+            purpose: 'Purpose',
+        },
+    },
+};
+
+// Safe receipt settings with fallback
+const safeReceiptSettings = computed(() => {
+    return props.receiptSettings || defaultReceiptSettings;
+});
+
+// Safe transaction type with fallback
+const safeTransactionType = computed(() => {
+    if (!props.transaction) return 'credit';
+    return props.transaction.type === 'debit' ? 'debit' : 'credit';
+});
+
+// Safe organization with fallback
+const safeOrganization = computed(() => {
+    return props.organization || {
+        name: 'Organization',
+        slogan: 'Helping communities grow',
+        logo_path: '',
+        currency: 'BDT'
+    };
+});
+
 const currencySymbol = computed(() => {
+    const currency = safeOrganization.value.currency;
     const currencyMap: { [key: string]: string } = {
         'USD': '$',
         'EUR': '€',
         'BDT': '৳',
         'GBP': '£'
     };
-    return currencyMap[props.organization.currency] || '৳';
+    return currencyMap[currency] || '৳';
 });
 
 const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
-    return new Date(dateString).toLocaleDateString('bn-BD', options);
+    if (!dateString) return 'N/A';
+
+    try {
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        return new Date(dateString).toLocaleDateString('bn-BD', options);
+    } catch (error) {
+        return 'Invalid Date';
+    }
 };
 
 const formatCurrency = (amount: string) => {
-    const numberAmount = parseFloat(amount.replace(/,/g, ''));
+    if (!amount) return `${currencySymbol.value} 0.00`;
 
-    if (isNaN(numberAmount)) {
+    try {
+        const numberAmount = parseFloat(amount.replace(/,/g, ''));
+
+        if (isNaN(numberAmount)) {
+            return 'Invalid amount';
+        }
+
+        const formatted = numberAmount.toLocaleString('bn-BD', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+        return `${currencySymbol.value} ${formatted}`;
+    } catch (error) {
         return 'Invalid amount';
     }
-
-    const formatted = numberAmount.toLocaleString('bn-BD', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    return `${currencySymbol.value} ${formatted}`;
 };
 
 const statusColorClasses = (status: string) => {
+    if (!status) return 'text-gray-600 bg-gray-100/50';
+
     const statusMap: Record<string, string> = {
         completed: 'text-green-600 bg-green-200',
         pending: 'text-yellow-600 bg-yellow-200',
@@ -230,6 +324,8 @@ const statusColorClasses = (status: string) => {
 };
 
 const statusIcon = (status: string) => {
+    if (!status) return ['fas', 'info-circle'];
+
     const iconMap: Record<string, string[]> = {
         completed: ['fas', 'check-circle'],
         pending: ['fas', 'clock'],
@@ -273,7 +369,7 @@ const generateReceiptImage = async (): Promise<HTMLCanvasElement> => {
     try {
         const canvas = await html2canvas(clone, {
             scale: 2,
-            backgroundColor: receiptSettings[props.transaction.type].body.background_color,
+            backgroundColor: safeReceiptSettings.value[safeTransactionType.value].body.background_color,
             logging: false,
             useCORS: true,
             scrollX: 0,
@@ -305,6 +401,11 @@ const generateReceiptImage = async (): Promise<HTMLCanvasElement> => {
 };
 
 const shareReceipt = async () => {
+    if (!props.transaction) {
+        toast.error('No transaction data available');
+        return;
+    }
+
     try {
         const canvas = await generateReceiptImage();
         const blob = await new Promise<Blob | null>((resolve) => {
@@ -322,8 +423,8 @@ const shareReceipt = async () => {
             files: [file],
             title: props.transaction.type === 'credit' ? 'Donation Receipt' : 'Payment Receipt',
             text: props.transaction.type === 'credit'
-                ? `I donated ${formatCurrency(props.transaction.amount)} to ${props.organization.name}`
-                : `Payment of ${formatCurrency(props.transaction.amount)} to ${props.organization.name}`
+                ? `I donated ${formatCurrency(props.transaction.amount)} to ${safeOrganization.value.name}`
+                : `Payment of ${formatCurrency(props.transaction.amount)} to ${safeOrganization.value.name}`
         };
 
         if (navigator.canShare && navigator.canShare(shareData)) {
@@ -340,13 +441,19 @@ const shareReceipt = async () => {
 };
 
 const downloadImageFromCanvas = (canvas: HTMLCanvasElement) => {
+    const fileName = props.transaction ? `receipt-${props.transaction.txn_id}.png` : 'receipt.png';
     const link = document.createElement('a');
-    link.download = `receipt-${props.transaction.txn_id}.png`;
+    link.download = fileName;
     link.href = canvas.toDataURL('image/png');
     link.click();
 };
 
 const downloadReceipt = async () => {
+    if (!props.transaction) {
+        toast.error('No transaction data available');
+        return;
+    }
+
     try {
         const canvas = await generateReceiptImage();
         downloadImageFromCanvas(canvas);
@@ -357,6 +464,11 @@ const downloadReceipt = async () => {
 };
 
 const printReceipt = async () => {
+    if (!props.transaction) {
+        toast.error('No transaction data available');
+        return;
+    }
+
     try {
         const canvas = await generateReceiptImage();
         const dataUrl = canvas.toDataURL('image/png');

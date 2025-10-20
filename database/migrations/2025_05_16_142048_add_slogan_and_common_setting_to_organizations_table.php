@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('organizations', function (Blueprint $table) {
             $table->text('slogan')->nullable()->after('name');
-            $table->json('common_setting')->nullable()->after('slogan');
+            $table->longText('common_setting')->nullable()->after('slogan');
         });
     }
 
