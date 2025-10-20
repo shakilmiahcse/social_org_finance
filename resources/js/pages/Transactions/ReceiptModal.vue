@@ -285,7 +285,7 @@ const formatDate = (dateString: string) => {
             hour: '2-digit',
             minute: '2-digit'
         };
-        return new Date(dateString).toLocaleDateString('bn-BD', options);
+        return new Date(dateString).toLocaleDateString('en-US', options);
     } catch (error) {
         return 'Invalid Date';
     }
@@ -301,7 +301,7 @@ const formatCurrency = (amount: string) => {
             return 'Invalid amount';
         }
 
-        const formatted = numberAmount.toLocaleString('bn-BD', {
+        const formatted = numberAmount.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
