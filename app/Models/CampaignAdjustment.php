@@ -14,7 +14,7 @@ class CampaignAdjustment extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'content'])
+            ->logOnly(['campaign_fund_id', 'main_fund_id', 'amount', 'type', 'note'])
             ->logOnlyDirty();
     }
     protected $fillable = [
