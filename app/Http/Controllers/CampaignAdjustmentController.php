@@ -66,36 +66,58 @@ class CampaignAdjustmentController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         if (!auth()->user()->can('adjustments.create')) {
             abort(403, 'You do not have permission to create campaign adjustments.');
         }
-        $organization_id = request()->session()->get("organization_id");
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
 
-        $mainFunds = Fund::getMainDropdown();
+        $mainFunds = Fund::leftJoin('transactions as t', 'funds.id', '=', 't.fund_id')
+            ->whereNull('funds.closed_at')
+            ->where('funds.type', 'main')
+            ->where('funds.organization_id', $organization_id)
+            ->select(
+                'funds.id',
+                'funds.name',
+                DB::raw("
+                    SUM(CASE WHEN t.type = 'credit' AND t.status = 'completed' THEN t.amount ELSE 0 END) -
+                    SUM(CASE WHEN t.type = 'debit' AND t.status = 'completed' THEN t.amount ELSE 0 END) AS total_amount
+                ")
+            )
+            ->groupBy('funds.id', 'funds.name')
+            ->get()
+            ->map(function ($fund) {
+                return [
+                    'id' => $fund->id,
+                    'name' => $fund->name,
+                    'amount' => (float) ($fund->total_amount ?? 0),
+                ];
+            })
+            ->values();
+
         $campaignFunds = Fund::leftJoin('transactions as t', 'funds.id', '=', 't.fund_id')
-        ->whereNull('funds.closed_at')
-        ->where('funds.type', 'campaign')
-        ->where('funds.organization_id', $organization_id)
-        ->select(
-            'funds.id',
-            'funds.name',
-            DB::raw("
-                SUM(CASE WHEN t.type = 'credit' AND t.status = 'completed' THEN t.amount ELSE 0 END) -
-                SUM(CASE WHEN t.type = 'debit' AND t.status = 'completed' THEN t.amount ELSE 0 END) AS total_amount
-            ")
-        )
-        ->groupBy('funds.id', 'funds.name')
-        ->get()
-        ->map(function ($fund) {
-            return [
-                'id' => $fund->id,
-                'name' => $fund->name,
-                'amount' => $fund->total_amount,
-            ];
-        })
-        ->values();
+            ->whereNull('funds.closed_at')
+            ->where('funds.type', 'campaign')
+            ->where('funds.organization_id', $organization_id)
+            ->select(
+                'funds.id',
+                'funds.name',
+                DB::raw("
+                    SUM(CASE WHEN t.type = 'credit' AND t.status = 'completed' THEN t.amount ELSE 0 END) -
+                    SUM(CASE WHEN t.type = 'debit' AND t.status = 'completed' THEN t.amount ELSE 0 END) AS total_amount
+                ")
+            )
+            ->groupBy('funds.id', 'funds.name')
+            ->get()
+            ->map(function ($fund) {
+                return [
+                    'id' => $fund->id,
+                    'name' => $fund->name,
+                    'amount' => (float) ($fund->total_amount ?? 0),
+                ];
+            })
+            ->values();
 
         return Inertia::render('CampaignAdjustments/Create', [
             'mainFunds' => $mainFunds,
@@ -183,7 +205,7 @@ class CampaignAdjustmentController extends Controller
             }
 
             if ($adjustment->type === 'to_main') {
-                // Debit campaign fund
+                // Debit campaign fund (money leaves the campaign fund)
                 Transaction::create([
                     'organization_id' => $organization_id,
                     'txn_id' => $txn_id1,
@@ -192,14 +214,14 @@ class CampaignAdjustmentController extends Controller
                     'amount' => $amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
-                    'type' => 'credit',
+                    'type' => 'debit',
                     'purpose' => 'Campaign Return',
                     'note' => 'Returned to Main Fund: ' . $mainFund->name,
                     'created_by' => auth()->id(),
                     'updated_by' => auth()->id(),
                 ]);
 
-                // Credit main fund
+                // Credit main fund (money enters the main fund)
                 Transaction::create([
                     'organization_id' => $organization_id,
                     'txn_id' => $txn_id2,
@@ -208,7 +230,7 @@ class CampaignAdjustmentController extends Controller
                     'amount' => $amount,
                     'payment_method' => 'adjustment',
                     'status' => 'completed',
-                    'type' => 'debit',
+                    'type' => 'credit',
                     'purpose' => 'Campaign Return',
                     'note' => 'Received from Campaign Fund: ' . $campaignFund->name,
                     'created_by' => auth()->id(),
@@ -255,18 +277,22 @@ class CampaignAdjustmentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         if (!auth()->user()->can('adjustments.delete')) {
             abort(403, 'You do not have permission to delete campaign adjustments.');
         }
+        $organization_id = $request->user()->organization_id ?? $request->session()->get('organization_id');
+
         try {
             DB::beginTransaction();
 
-            $adjustment = CampaignAdjustment::findOrFail($id);
+            $adjustment = CampaignAdjustment::where('organization_id', $organization_id)->findOrFail($id);
 
             // Only delete transactions related to this specific adjustment
-            Transaction::where('adjustment_id', $adjustment->id)->delete();
+            Transaction::where('adjustment_id', $adjustment->id)
+                ->where('organization_id', $organization_id)
+                ->delete();
 
             // Delete the adjustment itself
             $adjustment->delete();

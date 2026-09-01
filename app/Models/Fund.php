@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Support\Facades\DB;
+
 class Fund extends Model
 {
-    use LogsActivity;
+    use HasFactory, LogsActivity;
 
     protected static $recordEvents = ['created', 'updated', 'deleted'];
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'content'])
-            ->logOnlyDirty();
+            ->logOnly(['name', 'description', 'type', 'closed_at', 'closed_note'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
     protected $fillable = [
         'name', 'description', 'type', 'created_by', 'updated_by', 'organization_id', 'closed_note', 'closed_at', 'closed_by'
@@ -33,7 +37,7 @@ class Fund extends Model
 
     public static function getDropdown()
     {
-        $organization_id = request()->session()->get("organization_id");
+        $organization_id = request()->user()?->organization_id ?? request()->session()->get("organization_id");
 
         return self::whereNull('closed_at')->where('organization_id', $organization_id)->pluck('name', 'id')->map(function ($name, $id) {
             return ['id' => $id, 'name' => $name];
@@ -42,7 +46,7 @@ class Fund extends Model
 
     public static function getCampaignDropdown()
     {
-        $organization_id = request()->session()->get("organization_id");
+        $organization_id = request()->user()?->organization_id ?? request()->session()->get("organization_id");
 
         return self::whereNull('closed_at')->where('type', 'campaign')->where('organization_id', $organization_id)->pluck('name', 'id')->map(function ($name, $id) {
             return ['id' => $id, 'name' => $name];
@@ -51,7 +55,7 @@ class Fund extends Model
 
     public static function getMainDropdown()
     {
-        $organization_id = request()->session()->get("organization_id");
+        $organization_id = request()->user()?->organization_id ?? request()->session()->get("organization_id");
 
         return self::where('organization_id', $organization_id)
         ->where('type', 'main')
@@ -68,16 +72,16 @@ class Fund extends Model
     }
 
     /**
-     * Calculate the current balance of the fund
+     * Calculate the current balance of the fund using SQL aggregation
      */
     public function getBalance(): float
     {
-        return $this->transactions()
+        $result = $this->transactions()
             ->where('status', 'completed')
-            ->get()
-            ->reduce(function ($balance, $transaction) {
-                return $balance + ($transaction->type === 'credit' ? $transaction->amount : -$transaction->amount);
-            }, 0);
+            ->selectRaw("SUM(CASE WHEN type = 'credit' THEN amount WHEN type = 'debit' THEN -amount ELSE 0 END) as total")
+            ->value('total');
+
+        return (float) ($result ?? 0.0);
     }
 
     /**

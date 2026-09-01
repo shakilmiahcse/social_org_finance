@@ -82,9 +82,10 @@ class ReportController extends Controller
             ->withSum(['transactions' => function($q) use ($params) {
                 $this->applyDateFilters($q, $params);
             }], 'amount')
-            ->having('transactions_sum_amount', '>', 0)
             ->orderByDesc('transactions_sum_amount')
-            ->get();
+            ->get()
+            ->filter(fn($fund) => ($fund->transactions_sum_amount ?? 0) > 0)
+            ->values();
 
         $totalAmount = $funds->sum('transactions_sum_amount');
 
@@ -133,17 +134,21 @@ class ReportController extends Controller
         $startDate = Carbon::parse($params['start_date'])->subMonths($months);
         $endDate = Carbon::parse($params['end_date']);
 
+        $driver = \Illuminate\Support\Facades\DB::getDriverName();
+        $yearSql = $driver === 'sqlite' ? "cast(strftime('%Y', created_at) as integer)" : "YEAR(created_at)";
+        $monthSql = $driver === 'sqlite' ? "cast(strftime('%m', created_at) as integer)" : "MONTH(created_at)";
+
         return Transaction::where('organization_id', $organization_id)
             ->where('status', 'completed')
-            ->selectRaw('
-                YEAR(created_at) as year,
-                MONTH(created_at) as month,
+            ->selectRaw("
+                {$yearSql} as year,
+                {$monthSql} as month,
                 COUNT(*) as transaction_count,
-                SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) as credit,
-                SUM(CASE WHEN type = "debit" THEN amount ELSE 0 END) as debit,
-                AVG(CASE WHEN type = "credit" THEN amount ELSE NULL END) as avg_credit,
-                AVG(CASE WHEN type = "debit" THEN amount ELSE NULL END) as avg_debit
-            ')
+                SUM(CASE WHEN type = 'credit' THEN amount ELSE 0 END) as credit,
+                SUM(CASE WHEN type = 'debit' THEN amount ELSE 0 END) as debit,
+                AVG(CASE WHEN type = 'credit' THEN amount ELSE NULL END) as avg_credit,
+                AVG(CASE WHEN type = 'debit' THEN amount ELSE NULL END) as avg_debit
+            ")
             ->whereDate('created_at', '>=', $startDate)
             ->whereDate('created_at', '<=', $endDate)
             ->groupBy('year', 'month')
@@ -278,7 +283,92 @@ class ReportController extends Controller
 
     public function export(Request $request)
     {
+        if (!auth()->user()->can('reports.export')) {
+            abort(403, 'You do not have permission to export reports.');
+        }
+
         $validated = $this->validateRequest($request);
-        // Implement your export logic here
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
+        $reportType = $request->get('report_type', 'summary');
+        $fileName = 'financial-report-' . now()->format('Y-m-d-His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($organization_id, $validated, $reportType) {
+            $file = fopen('php://output', 'w');
+            // Write UTF-8 BOM for Excel / Bengali compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            if ($reportType === 'funds' || $reportType === 'fund_allocation') {
+                fputcsv($file, ['Fund Name', 'Type', 'Total Income', 'Total Expense', 'Current Balance']);
+                $funds = Fund::where('organization_id', $organization_id)->get();
+                foreach ($funds as $fund) {
+                    $income = $fund->transactions()->where('status', 'completed')->where('type', 'credit')->sum('amount');
+                    $expense = $fund->transactions()->where('status', 'completed')->where('type', 'debit')->sum('amount');
+                    fputcsv($file, [
+                        $fund->name,
+                        ucfirst($fund->type),
+                        number_format($income, 2, '.', ''),
+                        number_format($expense, 2, '.', ''),
+                        number_format($income - $expense, 2, '.', ''),
+                    ]);
+                }
+            } elseif ($reportType === 'donors' || $reportType === 'top_donors') {
+                fputcsv($file, ['Donor Name', 'Email', 'Phone', 'Address', 'Total Donated', 'Total Transactions']);
+                $donors = Donor::where('organization_id', $organization_id)
+                    ->withSum(['transactions' => function($q) use ($validated) {
+                        $this->applyDateFilters($q, $validated);
+                    }], 'amount')
+                    ->withCount(['transactions' => function($q) use ($validated) {
+                        $this->applyDateFilters($q, $validated);
+                    }])
+                    ->orderByDesc('transactions_sum_amount')
+                    ->get();
+
+                foreach ($donors as $donor) {
+                    fputcsv($file, [
+                        $donor->name,
+                        $donor->email ?? '-',
+                        $donor->phone ?? '-',
+                        $donor->address ?? '-',
+                        number_format($donor->transactions_sum_amount ?? 0, 2, '.', ''),
+                        $donor->transactions_count ?? 0,
+                    ]);
+                }
+            } else {
+                // Default: Full Transaction Ledger Report
+                fputcsv($file, ['Txn ID', 'Date', 'Type', 'Donor', 'Fund', 'Amount', 'Payment Method', 'Purpose', 'Status']);
+                $transactions = Transaction::where('organization_id', $organization_id)
+                    ->with(['donor', 'fund'])
+                    ->whereDate('created_at', '>=', $validated['start_date'])
+                    ->whereDate('created_at', '<=', $validated['end_date'])
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                foreach ($transactions as $txn) {
+                    fputcsv($file, [
+                        $txn->txn_id,
+                        Carbon::parse($txn->created_at)->format('Y-m-d H:i:s'),
+                        strtoupper($txn->type),
+                        $txn->donor?->name ?? 'N/A',
+                        $txn->fund?->name ?? 'N/A',
+                        number_format($txn->amount, 2, '.', ''),
+                        $txn->payment_method,
+                        $txn->purpose ?? '-',
+                        ucfirst($txn->status),
+                    ]);
+                }
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

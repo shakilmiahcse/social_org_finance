@@ -352,13 +352,18 @@ class TransactionController extends Controller
         if (!auth()->user()->can('transactions.edit')) {
             abort(403, 'You do not have permission to edit transactions.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
+        if ($transaction->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to edit this transaction.');
+        }
+
         $validated = $request->validate([
             'donor_id' => 'nullable|exists:donors,id',
             'fund_id' => 'required|exists:funds,id',
             'amount' => 'required|numeric|min:0',
             'type' => 'required|in:credit,debit',
             'purpose' => 'nullable|string|max:255',
-            'payment_method' => 'required|in:cash,bkash,bank',
+            'payment_method' => 'required|in:cash,bkash,card,bank,nagad,rocket',
             'reference' => 'nullable|string|max:255',
             'note' => 'nullable|string|max:255',
             'status' => 'nullable|in:pending,completed,canceled',
@@ -375,14 +380,14 @@ class TransactionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Transaction $transaction)
+    public function destroy(Request $request, Transaction $transaction)
     {
         if (!auth()->user()->can('transactions.delete')) {
             abort(403, 'You do not have permission to delete transactions.');
         }
-        // Check if the transaction exists
-        if (!$transaction) {
-            return redirect()->back()->with('error', 'Transaction not found');
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
+        if ($transaction->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to delete this transaction.');
         }
 
         try {
@@ -390,8 +395,9 @@ class TransactionController extends Controller
             return redirect()->route('transactions.index')
                 ->with('success', 'Transaction deleted successfully');
         } catch (\Exception $e) {
+            report($e);
             return redirect()->back()
-                ->with('error', 'Failed to delete transaction: ' . $e->getMessage());
+                ->with('error', 'Failed to delete transaction. Please try again.');
         }
     }
 }

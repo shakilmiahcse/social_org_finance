@@ -92,11 +92,16 @@ class UserController extends Controller
         if (!auth()->user()->can('users.edit')) {
             abort(403, 'You do not have permission to edit users.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get('organization_id');
+        if ($user->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to edit this user.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id.',id,organization_id,'.$request->session()->get('organization_id'),
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id.',id,organization_id,'.$organization_id,
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'required|exists:roles,name,organization_id,'.$request->session()->get('organization_id')
+            'role' => 'required|exists:roles,name,organization_id,'.$organization_id
         ]);
 
         DB::transaction(function () use ($request, $user) {
@@ -120,11 +125,16 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'User updated successfully.');
     }
 
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
         if (!auth()->user()->can('users.delete')) {
             abort(403, 'You do not have permission to delete users.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get('organization_id');
+        if ($user->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to delete this user.');
+        }
+
         // Prevent deletion of current user
         if ($user->id === auth()->id()) {
             return redirect()->back()
@@ -136,8 +146,9 @@ class UserController extends Controller
             return redirect()->back()
                 ->with('success', 'User deleted successfully.');
         } catch (\Exception $e) {
+            report($e);
             return redirect()->back()
-                ->with('error', 'Failed to delete user: ' . $e->getMessage());
+                ->with('error', 'Failed to delete user. Please try again.');
         }
     }
 }

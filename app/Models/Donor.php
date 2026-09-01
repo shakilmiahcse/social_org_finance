@@ -2,20 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 class Donor extends Model
 {
-    use LogsActivity;
+    use HasFactory, LogsActivity;
 
     protected static $recordEvents = ['created', 'updated', 'deleted'];
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'content'])
-            ->logOnlyDirty();
+            ->logOnly(['name', 'email', 'phone', 'blood_group', 'address'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
     protected $fillable = [
         'name', 'email', 'phone', 'blood_group', 'address', 'created_by', 'updated_by', 'organization_id'
@@ -33,7 +35,7 @@ class Donor extends Model
 
     public static function getDropdown()
     {
-        $organization_id = request()->session()->get("organization_id");
+        $organization_id = request()->user()?->organization_id ?? request()->session()->get("organization_id");
 
         return self::where('organization_id', $organization_id)
         ->pluck('name', 'id')

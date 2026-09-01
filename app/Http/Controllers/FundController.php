@@ -257,6 +257,11 @@ class FundController extends Controller
         if (!auth()->user()->can('funds.edit')) {
             abort(403, 'You do not have permission to edit funds.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
+        if ($fund->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to edit this fund.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -275,8 +280,9 @@ class FundController extends Controller
                 ->with('success', 'Fund updated successfully!');
 
         } catch (\Exception $e) {
+            report($e);
             return back()->withInput()
-                ->with('error', 'Failed to update fund. Error: ' . $e->getMessage());
+                ->with('error', 'Failed to update fund. Please try again.');
         }
     }
 
@@ -284,12 +290,21 @@ class FundController extends Controller
      * Remove the specified resource from storage.
      */
 
-    public function destroy(Fund $fund)
+    public function destroy(Request $request, Fund $fund)
     {
         if (!auth()->user()->can('funds.delete')) {
             abort(403, 'You do not have permission to delete funds.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
+        if ($fund->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to delete this fund.');
+        }
+
+        if ($fund->transactions()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete this fund because it has associated transactions.');
+        }
+
         $fund->delete();
-        return redirect()->route('funds.index')->with('success', 'Funds deleted successfully.');
+        return redirect()->route('funds.index')->with('success', 'Fund deleted successfully.');
     }
 }

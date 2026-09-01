@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $organization_id = request()->session()->get("organization_id");
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
 
         // Recent transactions with eager loading
         $transactions = Transaction::where('organization_id', $organization_id)->where('status', 'completed')
@@ -40,8 +40,8 @@ class DashboardController extends Controller
 
         // Fund allocation summary
         $fundAllocation = Fund::where('organization_id', $organization_id)
+            ->whereHas('transactions')
             ->withSum('transactions', 'amount')
-            ->having('transactions_sum_amount', '>', 0)
             ->orderByDesc('transactions_sum_amount')
             ->get();
 
@@ -52,14 +52,18 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $driver = \Illuminate\Support\Facades\DB::getDriverName();
+        $yearSql = $driver === 'sqlite' ? "cast(strftime('%Y', created_at) as integer)" : "YEAR(created_at)";
+        $monthSql = $driver === 'sqlite' ? "cast(strftime('%m', created_at) as integer)" : "MONTH(created_at)";
+
         // Transaction trends for the past 6 months
         $transactionTrends = (clone $baseQuery)
-            ->selectRaw('
-            YEAR(created_at) as year,
-            MONTH(created_at) as month,
-            SUM(CASE WHEN type = "credit" THEN amount ELSE 0 END) as credit,
-            SUM(CASE WHEN type = "debit" THEN amount ELSE 0 END) as debit
-        ')
+            ->selectRaw("
+                {$yearSql} as year,
+                {$monthSql} as month,
+                SUM(CASE WHEN type = 'credit' THEN amount ELSE 0 END) as credit,
+                SUM(CASE WHEN type = 'debit' THEN amount ELSE 0 END) as debit
+            ")
             ->where('created_at', '>=', now()->subMonths(6))
             ->groupBy('year', 'month')
             ->orderBy('year')
@@ -72,10 +76,10 @@ class DashboardController extends Controller
             'fundAllocation' => $fundAllocation,
             'topDonors' => $topDonors,
             'transactionTrends' => $transactionTrends,
-            'alerts' => $this->getAlerts($financialSummary['balance']),
+            'alerts' => $this->getAlerts($financialSummary['balance'], $organization_id),
             'permissions' => [
                 'viewTransactions' => auth()->user()->can('transactions.view'),
-                'createTransactions' => auth()->user()->can('transactions.view'),
+                'createTransactions' => auth()->user()->can('transactions.create'),
                 'viewDonors' => auth()->user()->can('donors.view'),
                 'viewFunds' => auth()->user()->can('funds.view'),
                 'viewDashboard' => auth()->user()->can('dashboard.view'),
@@ -84,9 +88,9 @@ class DashboardController extends Controller
     }
 
 
-    private function getAlerts($balance)
+    private function getAlerts($balance, $organization_id = null)
     {
-        $organization_id = request()->session()->get("organization_id");
+        $organization_id = $organization_id ?? (request()->user()?->organization_id ?? request()->session()->get("organization_id"));
         $alerts = [];
 
         if ($balance < 5000) {

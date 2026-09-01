@@ -65,16 +65,22 @@ class DonorController extends Controller
         if (!auth()->user()->can('donors.create')) {
             abort(403, 'You do not have permission to create donors.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
+
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'nullable|email|max:255|unique:donors,email',
+                'email' => [
+                    'nullable',
+                    'email',
+                    'max:255',
+                    Rule::unique('donors', 'email')->where('organization_id', $organization_id)
+                ],
                 'phone' => 'nullable|string|max:20',
                 'address' => 'nullable|string|max:255',
                 'blood_group' => 'nullable|string|max:5',
             ]);
 
-            $organization_id = $request->session()->get("organization_id");
             $validated['organization_id'] = $organization_id;
             $validated['created_by'] = auth()->id();
             $donor = Donor::create($validated);
@@ -88,20 +94,26 @@ class DonorController extends Controller
                 'message' => 'Donor created successfully'
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->validator->errors()->first()
+            ], 422);
+        } catch (\Exception $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create donor. Please try again.'
             ], 500);
         }
     }
 
-    public function getDropdown()
+    public function getDropdown(Request $request)
     {
         if (!auth()->user()->can('donors.view')) {
             abort(403, 'You do not have permission to view donors.');
         }
-        $organization_id = request()->session()->get("organization_id");
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
         try {
             $donors = Donor::where('organization_id', $organization_id)->latest()
                 ->get()
@@ -119,9 +131,10 @@ class DonorController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Failed to load donors list'
             ], 500);
         }
     }
@@ -150,12 +163,18 @@ class DonorController extends Controller
         if (!auth()->user()->can('donors.edit')) {
             abort(403, 'You do not have permission to edit donors.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
+        if ($donor->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to edit this donor.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
                 'nullable',
                 'email',
                 'max:255',
+                Rule::unique('donors', 'email')->where('organization_id', $organization_id)->ignore($donor->id)
             ],
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:255',
@@ -171,11 +190,16 @@ class DonorController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Donor $donor)
+    public function destroy(Request $request, Donor $donor)
     {
         if (!auth()->user()->can('donors.delete')) {
             abort(403, 'You do not have permission to delete donors.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get("organization_id");
+        if ($donor->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to delete this donor.');
+        }
+
         $donor->delete();
         return redirect()->route('donors.index')->with('success', 'Donor deleted successfully.');
     }

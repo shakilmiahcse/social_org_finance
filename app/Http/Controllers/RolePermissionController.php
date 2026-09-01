@@ -85,8 +85,13 @@ class RolePermissionController extends Controller
         if (!auth()->user()->can('roles.edit')) {
             abort(403, 'You do not have permission to edit roles.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get('organization_id');
+        if ($role->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to edit this role.');
+        }
+
         $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $role->id . ',id,organization_id,' . $request->session()->get('organization_id'),
+            'name' => 'required|string|max:255|unique:roles,name,' . $role->id . ',id,organization_id,' . $organization_id,
             'permissions' => 'required|array',
             'permissions.*' => 'exists:permissions,name'
         ]);
@@ -102,11 +107,16 @@ class RolePermissionController extends Controller
         return redirect()->back()->with('success', 'Role updated successfully.');
     }
 
-    public function destroy(Role $role)
+    public function destroy(Request $request, Role $role)
     {
         if (!auth()->user()->can('roles.delete')) {
             abort(403, 'You do not have permission to delete roles.');
         }
+        $organization_id = $request->user()?->organization_id ?? $request->session()->get('organization_id');
+        if ($role->organization_id !== $organization_id) {
+            abort(403, 'You do not have permission to delete this role.');
+        }
+
         // Prevent deletion of admin role
         if ($role->name === 'admin') {
             return redirect()->back()
@@ -124,8 +134,9 @@ class RolePermissionController extends Controller
             return redirect()->back()
                 ->with('success', 'Role deleted successfully.');
         } catch (\Exception $e) {
+            report($e);
             return redirect()->back()
-                ->with('error', 'Failed to delete role: ' . $e->getMessage());
+                ->with('error', 'Failed to delete role. Please try again.');
         }
     }
 }
